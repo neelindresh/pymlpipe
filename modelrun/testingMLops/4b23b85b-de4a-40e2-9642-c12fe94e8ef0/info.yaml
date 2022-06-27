@@ -1,0 +1,16 @@
+artifact:
+- /Users/indreshbhattacharya/Desktop/WorkSpace/pymlpipe/modelrun/testingMLops/4b23b85b-de4a-40e2-9642-c12fe94e8ef0/artifacts/some.csv
+- /Users/indreshbhattacharya/Desktop/WorkSpace/pymlpipe/modelrun/testingMLops/4b23b85b-de4a-40e2-9642-c12fe94e8ef0/artifacts/traing.csv
+execution_time: '2022-06-26 23:52:46'
+metrics:
+  mae: 1.1
+  mse: 12.1
+  r2: 1.11
+  rmse: 6.5
+model:
+  model_name: linear_regression
+  model_path: /Users/indreshbhattacharya/Desktop/WorkSpace/pymlpipe/modelrun/testingMLops/4b23b85b-de4a-40e2-9642-c12fe94e8ef0/models/linear_regression.pkl
+params:
+  e: 0.1
+  max_depth: 100
+  max_iter: 500

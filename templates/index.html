@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PyMLPipe</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  </head>
+  <style>
+    .center-text{
+        text-align: center
+    }
+    .dropdown-inactive{
+        display: none;
+    }
+    .dropdown-active{
+        display: block;
+    }
+    hr{
+        margin:2px;
+    }
+  </style>
+  <script>
+    toggle=false;
+    function show_dropdown(id){
+        console.log(id)
+        console.log(toggle)
+        if(toggle==false){
+            console.log("show")
+            document.getElementById(id).style.display="block"
+            toggle=id;
+        }
+        else if(toggle==id){
+            console.log("hide")
+            document.getElementById(id).style.display="none"
+            toggle=false;
+        }
+        else if(toggle!=id){
+            document.getElementById(toggle).style.display="none"
+            document.getElementById(id).style.display="block"
+            toggle=id
+        }
+        
+    }
+  </script>
+  <body>
+  <section class="section">
+    <div class="container">
+     <h1 class="title center-text">PyMLPipe</h1
+    </div>
+  </section>
+  <section class='section'>
+    <div class="columns">
+
+
+        <div class="column is-one-fifth">
+
+        <aside class="menu">
+            <p class="menu-label">
+            Experiments
+            </p>
+            <ul class="menu-list">
+            {%for experiment in runs%}
+            <li><a href="#{{experiment}}">{{experiment}}</a></li>
+            <hr>
+            <!--
+            <li style="margin:5px;">
+                <a class="is-active" href="#{{experiment}}" onclick=show_dropdown("{{experiment}}")>{{loop.index}}. {{experiment}}</a>
+                <ul id="{{experiment}}" class="dropdown-inactive">
+                {%for run in runs[experiment]['runs']%}
+                <li><a>{{run[:15]}}...</a></li>
+                
+                {%endfor%}
+                </ul>
+            </li>
+            -->
+            {%endfor%}
+                
+            </ul>
+            
+        </aside>
+
+        </div>
+
+        <div class="column" >
+            {%for experiment in runs%}
+            
+            <table id="example" class="table is-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Run ID</th>
+                        <th>Date</th>
+                        <th>Model</th>
+                        <th>version</th>
+                        <th>tags</th>
+                        {%for metric in metrics%}
+                            <th>{{metric}}</th>
+                        {%endfor%}
+                    </tr>
+                </thead>
+                <tbody>
+                    {%for run in runs[experiment]['runs']%}
+                    <tr>
+                        <td>{{run[:15]}}...</td>
+                        <td>{{run_details[run].execution_time}}</td>
+                        <td>{{run_details[run].model.model_name}}</td>
+                        <td>{{run_details[run].version}}</td>
+                        <td>{{",".join(run_details[run].tags)}}</td>
+                        {%for metric in metrics%}
+                        <td>{{run_details[run]["metrics"][metric]}}</td>
+                        {%endfor%}
+                    </tr>
+                    {%endfor%}
+   
+ 
+                </tbody>
+               
+            </table>
+            {%endfor%}
+        </div>
+    </div>
+    </section>
+  </body>
+</html>

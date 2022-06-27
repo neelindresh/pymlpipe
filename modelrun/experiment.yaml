@@ -1,0 +1,15 @@
+testingMLops:
+  execution_time: '2022-06-26 23:58:20'
+  experiment_path: /Users/indreshbhattacharya/Desktop/WorkSpace/pymlpipe/modelrun/testingMLops
+  runs:
+  - 93085b3b-e012-45ab-ac3e-9429acd483bf
+  - 4b23b85b-de4a-40e2-9642-c12fe94e8ef0
+  - 05ffb668-bb42-4c0f-945c-390a7de79ff9
+  - 2f272289-d879-4abd-8167-6264b3e9fb04
+  - f4bb3c84-357f-464a-9744-b25030fafa11
+testingMLops1:
+  execution_time: '2022-06-27 00:21:08'
+  experiment_path: /Users/indreshbhattacharya/Desktop/WorkSpace/pymlpipe/modelrun/testingMLops1
+  runs:
+  - d5d88af5-5e91-4a7d-8ad4-78259a00391a
+  - c7c7e336-5445-42d3-8c19-7d8c2147b40e
