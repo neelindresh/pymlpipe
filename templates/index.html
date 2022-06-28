@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PyMLPipe</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+
   </head>
   <style>
     .center-text{
@@ -21,7 +23,14 @@
     }
   </style>
   <script>
+    const run_data = {{ run_details | tojson }} //can be improved
+    const experiment_data={{runs | tojson}} //can be improved
+    var current_table=Object.keys(experiment_data)[0]
+    
     toggle=false;
+
+
+
     function show_dropdown(id){
         console.log(id)
         console.log(toggle)
@@ -42,13 +51,78 @@
         }
         
     }
+    var metrics=[]
+    var run_ids=[]
+    function checkmetric(id)
+    {   
+        //document.getElementById(id).checked) 
+        if(document.getElementById("checkbox_"+id).checked){
+            metrics.push(id)
+        }
+        else{
+            index = metrics.indexOf(id);
+            if (index > -1) {
+                metrics.splice(index, 1); // 2nd parameter means remove one item only
+              }
+        }
+        if(metrics.length>0 & run_ids.length>0){
+            document.getElementById("metric-compare-button").disabled = false
+        }
+        else{
+            document.getElementById("metric-compare-button").disabled = true
+        }
+       
+        
+    }
+    function checkrow(id){
+        if(document.getElementById("checkbox_"+id).checked){
+            run_ids.push(id)
+        }
+        else{
+            index = run_ids.indexOf(id);
+            if (index > -1) {
+                run_ids.splice(index, 1); // 2nd parameter means remove one item only
+              }
+        }
+        if(metrics.length>0 & run_ids.length>0){
+            document.getElementById("metric-compare-button").disabled = false
+        }
+        else{
+            document.getElementById("metric-compare-button").disabled = true
+        }
+        
+    }
+    function compare_metrics(){
+        traces=[]
+        for(var i=0;i<run_ids.length;i++){
+            label_for_plot=run_ids[i].slice(0,13)+"..."
+            run_details=run_ids[i]
+            metrics_details=run_data[run_details]["metrics"]
+            metrics_values=[]
+            for(var j=0;j<metrics.length;j++){
+                metrics_values.push(metrics_details[metrics[j]])
+            }
+            trace=create_traces(metrics,metrics_values,label_for_plot)
+            traces.push(trace)
+        }
+        plot_bar_group(traces)
+    }
+    function show_table(id){
+        if(id!=current_table){
+            document.getElementById(id).style.display='table'
+            document.getElementById(current_table).style.display='none'
+            current_table=id
+        }
+        
+    }
   </script>
   <body>
   <section class="section">
     <div class="container">
-     <h1 class="title center-text">PyMLPipe</h1
+     <h1 class="title center-text">PyMLPipe</h1>
     </div>
   </section>
+  
   <section class='section'>
     <div class="columns">
 
@@ -61,7 +135,7 @@
             </p>
             <ul class="menu-list">
             {%for experiment in runs%}
-            <li><a href="#{{experiment}}">{{experiment}}</a></li>
+            <li onclick="show_table('{{experiment}}')"><a href="#{{experiment}}" >{{experiment}}</a></li>
             <hr>
             <!--
             <li style="margin:5px;">
@@ -83,25 +157,70 @@
         </div>
 
         <div class="column" >
+            <div class="action-bar">
+                <div class="columns">
+                    <!--<div class="column">
+                
+                    </div>-->
+                    <div class="column">
+                        <button class="button is-primary" onclick="compare_metrics()" id="metric-compare-button" disabled>Compare Metrics</button>
+                    </div>
+                </div>
+
+            </div>
             {%for experiment in runs%}
             
-            <table id="example" class="table is-striped" style="width:100%">
+            {%if loop.index==1%}
+                {%set display='table'%}
+            {%else%}
+                {%set display='none'%}
+            {%endif%}
+            <table class="table is-striped" style="width:100%;display:{{display}}" id="{{experiment}}">
+                
+                <!--<thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        
+                        
+                        <th>
+                            <input type="checkbox" onclick=checkmetric("{{metric}}")>
+                            Select all
+                        </th>
+                        
+                    </tr>
+                </thead>-->
                 <thead>
                     <tr>
+                        <th></th>
                         <th>Run ID</th>
                         <th>Date</th>
                         <th>Model</th>
                         <th>version</th>
                         <th>tags</th>
+                        
                         {%for metric in metrics%}
-                            <th>{{metric}}</th>
+                            <th>
+                                <div>
+                                <input type="checkbox" onclick=checkmetric("{{metric}}") id="checkbox_{{metric}}">
+                                
+                                <div>
+                                {{metric}}
+                                </div>
+                                
+                            </th>
                         {%endfor%}
                     </tr>
                 </thead>
                 <tbody>
                     {%for run in runs[experiment]['runs']%}
                     <tr>
-                        <td>{{run[:15]}}...</td>
+                        <td><input type="checkbox" onclick=checkrow("{{run}}") id="checkbox_{{run}}"></td>
+                        <td><a href="{{run}}">{{run[:13]}}...</a></td>
                         <td>{{run_details[run].execution_time}}</td>
                         <td>{{run_details[run].model.model_name}}</td>
                         <td>{{run_details[run].version}}</td>
@@ -117,8 +236,39 @@
                
             </table>
             {%endfor%}
+            <!--Display tables--->
+            <div id="plot-data">
+
+            </div>
+        </div>
+        
+    </div>
+    <div class="columns">
+        <div class="column is-one-fifth">
+
+        </div>
+        <div class="column">
+            
         </div>
     </div>
+    
     </section>
   </body>
+  <script>
+    function create_traces(labels,points,name){
+        return {
+            x: labels,
+            y: points,
+            name: name,
+            type: 'bar'
+          };
+        
+    }
+    function plot_bar_group(data){
+        
+      var layout = {barmode: 'group'};
+      Plotly.newPlot('plot-data', data,layout);
+    }
+   
+  </script>
 </html>

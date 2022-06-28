@@ -1,6 +1,6 @@
 import flask
 import os
-from utils import yamlio
+from pymlpipe.utils import yamlio
 
 
 app=flask.Flask(__name__)
@@ -32,6 +32,14 @@ def index():
                                  run_details=info,
                                  metrics=list(set(metrics))
                                  )
+@app.route("/<run_id>/")
+def runpage(run_id):
+    return flask.render_template('run.html',run_id=run_id)
+
+def start_ui():
+    app.run(debug=True)
+    
+    
 
 if __name__ == '__main__':
     app.run()
