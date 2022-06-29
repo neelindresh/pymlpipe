@@ -3,19 +3,109 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hello Bulma!</title>
+    <title>PyMLPipe</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   </head>
+  <style>
+    .center-text{
+        text-align: center
+    }
+    .dropdown-inactive{
+        display: none;
+    }
+    .dropdown-active{
+        display: block;
+    }
+    hr{
+        margin:2px;
+    }
+  </style>
   <body>
-  <section class="section">
-    <div class="container">
-      <h1 class="title">
-        Hello World
-      </h1>
-      <p class="subtitle">
-        {{run_id}}
-      </p>
-    </div>
-  </section>
+    <section class="section">
+        <div class="container">
+         <h1 class="title center-text">PyMLPipe</h1>
+        </div>
+    </section>
+    <section class="container">
+        
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="/">home</a></li>
+                <li class="is-active"><a href="#" aria-current="page">{{run_id}}</a></li>
+            </ul>
+        </nav>
+        
+    </section>
+    <section class="section">
+      <div class="columns">
+        <div class="column is-one-fifth">
+          <aside class="menu">
+            <p class="menu-label">
+            Run Details
+            </p>
+            <ul class="menu-list">
+            
+            <li ><a href="" >Run Details</a></li>
+            <hr>
+            <li ><a href="" >Artifacts</a></li>
+            <hr>
+            <li ><a href="" >Metrics</a></li>
+            <hr>
+            <li ><a href="" >Models</a></li>
+            <hr>
+            <li ><a href="" >Tags</a></li>
+            <hr>
+            <li ><a href="" >Data Schema</a></li>
+                
+            </ul>
+            
+        </aside>
+        </div>
+        <div class="column">
+            <div id="run_details">
+              <h1 class="subtitle ">Run Details </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Parmaters</th>
+                    <th>Values</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in expertiment_details%}
+                  <tr>
+                    <td> {{details}}</td>
+                    <td> {{expertiment_details[details]}}</td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+            <div id="artifact_details">
+              <h1 class="subtitle ">Artifacts </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Parmaters</th>
+                    <th>Values</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in expertiment_details%}
+                  <tr>
+                    <td> {{details}}</td>
+                    <td> {{expertiment_details[details]}}</td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+        </div>
+      </div>
+    </section>
   </body>
 </html>

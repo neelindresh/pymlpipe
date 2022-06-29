@@ -24,20 +24,52 @@ def index():
             if "metrics" in run_details:
                 metrics.extend(list(run_details["metrics"].keys()))
             
-        
+    exp_names=list(experiment_lists.keys())
     
     
     return flask.render_template("index.html",
                                  runs=experiment_lists,
                                  run_details=info,
-                                 metrics=list(set(metrics))
+                                 metrics=list(set(metrics)),
+                                 current_experiment=exp_names
                                  )
 @app.route("/<run_id>/")
 def runpage(run_id):
-    return flask.render_template('run.html',run_id=run_id)
+    experiments,run_id=run_id.split("@")
+    experiment_lists=yamlio.read_yaml(os.path.join(MODEL_DIR,EXPERIMENT_FILE))
+    run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
+    expertiment_details={
+        "RUN_ID":run_id,
+        "EXPERIMENT NAME":experiments,
+        "EXECUTION DATE TIME":run_details["execution_time"]
+        }
+    if 'tags' in run_details:
+        expertiment_details["TAGS"]=run_details['tags']
+    else:
+        expertiment_details["TAGS"]="-"
+    if 'version' in run_details:
+        expertiment_details["VERSION"]=run_details['version']
+    else:
+        expertiment_details["VERSION"]="-"
+    
+    return flask.render_template('run.html',
+                                 run_id=run_id,
+                                 experiments=experiments,
+                                 expertiment_details=expertiment_details
+                                 )
 
-def start_ui():
-    app.run(debug=True)
+def start_ui(host=None,port=None,debug=False):
+    '''Implemet logic for try catch'''
+    if host==None and port==None:
+        app.run(debug=debug)
+    elif host==None:
+        app.run(port=port,debug=debug)
+    elif port==None:
+        app.run(host=host,debug=debug)
+    else:
+        app.run(host=host,port=port,debug=debug)
+        
+        
     
     
 

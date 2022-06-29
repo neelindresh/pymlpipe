@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PyMLPipe</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
     <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
 
   </head>
@@ -21,12 +23,15 @@
     hr{
         margin:2px;
     }
+    .sidebar-active{
+        background: aquamarine;
+        border: 1px solid;
+    }
   </style>
   <script>
     const run_data = {{ run_details | tojson }} //can be improved
-    const experiment_data={{runs | tojson}} //can be improved
-    var current_table=Object.keys(experiment_data)[0]
-    
+    var current_table={{current_experiment | safe}} //can be improved
+    current_table=current_table[0]
     toggle=false;
 
 
@@ -55,12 +60,16 @@
     var run_ids=[]
     function checkmetric(id)
     {   
+        //console.log(id)
+        console.log(document.getElementById("checkbox_"+id).checked)
         //document.getElementById(id).checked) 
         if(document.getElementById("checkbox_"+id).checked){
+            id=id.split("_")[1]
             metrics.push(id)
+            //document.getElementById("checkbox_"+id).setAttribute('checked', 'checked')
         }
         else{
-            index = metrics.indexOf(id);
+            index = metrics.indexOf(id.split("_")[1]);
             if (index > -1) {
                 metrics.splice(index, 1); // 2nd parameter means remove one item only
               }
@@ -72,9 +81,10 @@
             document.getElementById("metric-compare-button").disabled = true
         }
        
-        
+        console.log(metrics,run_ids)
     }
     function checkrow(id){
+        
         if(document.getElementById("checkbox_"+id).checked){
             run_ids.push(id)
         }
@@ -90,7 +100,7 @@
         else{
             document.getElementById("metric-compare-button").disabled = true
         }
-        
+        console.log(metrics,run_ids)
     }
     function compare_metrics(){
         traces=[]
@@ -111,9 +121,26 @@
         if(id!=current_table){
             document.getElementById(id).style.display='table'
             document.getElementById(current_table).style.display='none'
+            document.getElementById("sidebar_"+id).classList.add("sidebar-active")
+            
+            document.getElementById("sidebar_"+current_table).classList.remove("sidebar-active")
             current_table=id
+            metrics=[]
+            run_ids=[]
+            remove_plot_bar_group()
+            uncheck_all()
         }
         
+    }
+    function uncheck_all(){
+        input_elements=document.getElementsByTagName("input")
+        for(var i=0;i<input_elements.length;i++){
+            if(input_elements[i].type=="checkbox"){
+                if(input_elements[i].checked){
+                    console.log(input_elements[i].click())
+                }
+            }
+        }
     }
   </script>
   <body>
@@ -135,7 +162,9 @@
             </p>
             <ul class="menu-list">
             {%for experiment in runs%}
-            <li onclick="show_table('{{experiment}}')"><a href="#{{experiment}}" >{{experiment}}</a></li>
+            
+            <li onclick="show_table('{{experiment}}')" id="sidebar_{{experiment}}"><a href="#{{experiment}}" >{{experiment}}</a></li>
+            
             <hr>
             <!--
             <li style="margin:5px;">
@@ -162,6 +191,7 @@
                     <!--<div class="column">
                 
                     </div>-->
+                    
                     <div class="column">
                         <button class="button is-primary" onclick="compare_metrics()" id="metric-compare-button" disabled>Compare Metrics</button>
                     </div>
@@ -206,7 +236,7 @@
                         {%for metric in metrics%}
                             <th>
                                 <div>
-                                <input type="checkbox" onclick=checkmetric("{{metric}}") id="checkbox_{{metric}}">
+                                <input type="checkbox" onclick="checkmetric('{{experiment}}_{{metric}}')" id="checkbox_{{experiment}}_{{metric}}">
                                 
                                 <div>
                                 {{metric}}
@@ -219,8 +249,8 @@
                 <tbody>
                     {%for run in runs[experiment]['runs']%}
                     <tr>
-                        <td><input type="checkbox" onclick=checkrow("{{run}}") id="checkbox_{{run}}"></td>
-                        <td><a href="{{run}}">{{run[:13]}}...</a></td>
+                        <td><input type="checkbox" onclick="checkrow('{{run}}')" id="checkbox_{{run}}"></td>
+                        <td><a href="{{experiment}}@{{run}}">{{run[:13]}}...</a></td>
                         <td>{{run_details[run].execution_time}}</td>
                         <td>{{run_details[run].model.model_name}}</td>
                         <td>{{run_details[run].version}}</td>
@@ -269,6 +299,10 @@
       var layout = {barmode: 'group'};
       Plotly.newPlot('plot-data', data,layout);
     }
-   
+    function remove_plot_bar_group(){
+        Plotly.purge('plot-data');
+    }
+    document.getElementById("sidebar_"+current_table).classList.add("sidebar-active")
+
   </script>
 </html>

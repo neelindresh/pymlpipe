@@ -11,6 +11,8 @@ import datetime
     
     
 class Context_Manager:
+        """_summary_: Context Manager Logging for with statement
+        """
         def __init__(self,name,feature_store,run_id=None):
             super(PyMLPipe)
             if run_id==None:
@@ -26,15 +28,30 @@ class Context_Manager:
                           "params":os.path.join(self.exp_path,"params")}
             self.info_dict=[]
         def get_path(self):
+            """_summary_
+
+            Returns:
+                _type_: _description_
+            """
             return self.exp_path
             
         def structure(self):
+            """_summary_
+
+            Returns:
+                _type_: _description_
+            """
             self.exp_path=create_folder(self.feature_store,self.name)
             self.exp_path=create_folder(self.exp_path,self.runid)
             self._create_all_folders(self.exp_path)
             return self.exp_path
         
         def _create_all_folders(self,exp_path):
+            """_summary_
+
+            Args:
+                exp_path (_type_): _description_
+            """
             for i in self.folders:
                 create_folder(exp_path,i)
         def write_to_yaml(self,info):
@@ -87,12 +104,22 @@ class PyMLPipe:
         
     
     def set_experiment(self,name):
+        """_summary_
+
+        Args:
+            name (_type_): _description_
+        """
         self.experiment_name=name
         exp_path=create_folder(self.feature_store,self.experiment_name)
         self._write_info_experiment(name,exp_path)
     
     
     def set_tag(self):
+        """_summary_
+
+        Raises:
+            TypeError: _description_
+        """
         if "tags" not in self.info:
             self.info["tags"]=[]
         if isinstance(tag_dtag_valueict,dict) or isinstance(tag_dtag_valueict,list) or isinstance(tag_dtag_valueict,set): 
@@ -102,6 +129,14 @@ class PyMLPipe:
     
     
     def set_tags(self,tag_dict:list):
+        """_summary_
+
+        Args:
+            tag_dict (list): _description_
+
+        Raises:
+            TypeError: _description_
+        """
         if "tags" not in self.info:
             self.info["tags"]=[]
         if isinstance(tag_dict,list): 
@@ -110,18 +145,44 @@ class PyMLPipe:
             raise TypeError("unsupported type, Expected 'list' got "+str(type(tag_dict)))
         
     def get_tags(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.info["tags"]
         
     def set_version(self,version):
+        """_summary_
+
+        Args:
+            version (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+        """
         if isinstance(version,dict) or isinstance(version,list) or isinstance(version,set): 
            raise TypeError("unsupported type, Expected 'str','int','float' got "+str(type(tag_dict)))
         self.info["version"]=version
         
         
     def get_version(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.info["version"]
     
     def log_metrics(self,metric_dict:dict):
+        """_summary_
+
+        Args:
+            metric_dict (dict): _description_
+
+        Raises:
+            TypeError: _description_
+        """
         if "metrics" not in self.info:
             self.info["metrics"]={}
         if isinstance(metric_dict,dict): 
@@ -131,6 +192,16 @@ class PyMLPipe:
         
         
     def log_matric(self,metric_name,metric_value):
+        """_summary_
+
+        Args:
+            metric_name (_type_): _description_
+            metric_value (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+            TypeError: _description_
+        """
         if "metrics" not in self.info:
             self.info["metrics"]={}
         mv=None
@@ -142,6 +213,14 @@ class PyMLPipe:
        
         
     def log_params(self,param_dict:dict):
+        """_summary_
+
+        Args:
+            param_dict (dict): _description_
+
+        Raises:
+            TypeError: _description_
+        """
         if "params" not in self.info:
             self.info["params"]={}
         if isinstance(param_dict,dict): 
@@ -151,6 +230,16 @@ class PyMLPipe:
         
         
     def log_param(self,param_name,param_value):
+        """_summary_
+
+        Args:
+            param_name (_type_): _description_
+            param_value (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+            TypeError: _description_
+        """
         if "params" not in self.info:
             self.info["params"]={}
         mv=None
@@ -161,6 +250,16 @@ class PyMLPipe:
         self.info["params"][param_name]=param_value
     
     def register_artifact(self,artifact_name,artifact):
+        """_summary_
+
+        Args:
+            artifact_name (_type_): _description_
+            artifact (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+            ValueError: _description_
+        """
         if not isinstance(artifact, pd.DataFrame):
             raise TypeError("Please provide DataFrame in 'artifact'")
         if artifact_name=="" or artifact_name==None:
@@ -174,6 +273,15 @@ class PyMLPipe:
         
         
     def register_artifact_with_path(self,artifact):
+        """_summary_
+
+        Args:
+            artifact (_type_): _description_
+
+        Raises:
+            TypeError: _description_
+            ValueError: _description_
+        """
         if not isinstance(artifact, str):
             raise TypeError("Please provide full path of artifact")
         if not os.path.exists(artifact):
@@ -186,13 +294,29 @@ class PyMLPipe:
         
         
     def get_info(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.info 
     
     
     def get_artifact(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return self.info["artifact"]
     
     def _write_info_experiment(self,experiment_name,path):
+        """_summary_
+
+        Args:
+            experiment_name (_type_): _description_
+            path (_type_): _description_
+        """
         fulllist={}
         if os.path.exists(os.path.join(self.feature_store,"experiment.yaml")):
             with open(os.path.join(self.feature_store,"experiment.yaml")) as file:
@@ -216,6 +340,12 @@ class PyMLPipe:
                 
     
     def _write_info_run(self,experiment_name,run_id):
+        """_summary_
+
+        Args:
+            experiment_name (_type_): _description_
+            run_id (_type_): _description_
+        """
         fulllist={}
         
         with open(os.path.join(self.feature_store,"experiment.yaml")) as file:
