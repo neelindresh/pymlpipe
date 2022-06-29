@@ -274,7 +274,12 @@ class PyMLPipe:
         artifact.to_csv(path,index=False)
         if "artifact" not in self.info:
             self.info["artifact"]=[]
-        self.info["artifact"].append(path)
+        
+        self.info["artifact"].append({
+            "name":artifact_name,
+            "path":path,
+            "tag":artifact_type
+        })
         
         
     def register_artifact_with_path(self,artifact,artifact_type="training"):
@@ -296,8 +301,12 @@ class PyMLPipe:
         shutil.copy(artifact, self.context_manager.folders["artifacts"])
         if "artifact" not in self.info:
             self.info["artifact"]=[]
-        self.info["artifact"].append(os.path.join(self.context_manager.folders["artifacts"],os.path.basename(artifact)))
-        
+        path=os.path.join(self.context_manager.folders["artifacts"],os.path.basename(artifact))
+        self.info["artifact"].append({
+            "name":os.path.basename(path),
+            "path":path,
+            "tag":artifact_type
+        })
         
     def get_info(self):
         """_summary_: get the whole run details
