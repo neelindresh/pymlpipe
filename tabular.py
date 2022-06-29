@@ -11,7 +11,9 @@ import datetime
     
     
 class Context_Manager:
-        """_summary_: Context Manager Logging for with statement
+        """_summary_: Context Manager for with statement
+        1. creates folders and subfolders
+        2. creates runid for a run instance
         """
         def __init__(self,name,feature_store,run_id=None):
             super(PyMLPipe)
@@ -104,21 +106,22 @@ class PyMLPipe:
         
     
     def set_experiment(self,name):
-        """_summary_
+        """_summary_: sets the experiment name
 
         Args:
-            name (_type_): _description_
+            name (str): name of the experiment
         """
         self.experiment_name=name
         exp_path=create_folder(self.feature_store,self.experiment_name)
         self._write_info_experiment(name,exp_path)
     
     
-    def set_tag(self):
-        """_summary_
-
+    def set_tag(self,tag_value):
+        """_summary_: sets a tag for a perticular run
+        Args:
+            name (str or int or float): tag name 
         Raises:
-            TypeError: _description_
+            TypeError: Supported type 'str','int','float'
         """
         if "tags" not in self.info:
             self.info["tags"]=[]
@@ -129,13 +132,13 @@ class PyMLPipe:
     
     
     def set_tags(self,tag_dict:list):
-        """_summary_
+        """_summary_:sets N no of tags for a perticular run
 
         Args:
-            tag_dict (list): _description_
+            tag_dict (list): tag names in list format
 
         Raises:
-            TypeError: _description_
+            TypeError: Expected 'list'
         """
         if "tags" not in self.info:
             self.info["tags"]=[]
@@ -145,21 +148,21 @@ class PyMLPipe:
             raise TypeError("unsupported type, Expected 'list' got "+str(type(tag_dict)))
         
     def get_tags(self):
-        """_summary_
+        """_summary_: get all the tags that are associated with the run
 
         Returns:
-            _type_: _description_
+            list: tags that are associated with the run
         """
         return self.info["tags"]
         
     def set_version(self,version):
-        """_summary_
+        """_summary_:sets version number for the perticular run
 
         Args:
-            version (_type_): _description_
+            version (str or int or float): version number
 
         Raises:
-            TypeError: _description_
+            TypeError: Expected 'str','int','float'
         """
         if isinstance(version,dict) or isinstance(version,list) or isinstance(version,set): 
            raise TypeError("unsupported type, Expected 'str','int','float' got "+str(type(tag_dict)))
@@ -167,21 +170,22 @@ class PyMLPipe:
         
         
     def get_version(self):
-        """_summary_
+        """_summary_:get the version number associated with the run
+
 
         Returns:
-            _type_: _description_
+            _type_: version number
         """
         return self.info["version"]
     
     def log_metrics(self,metric_dict:dict):
-        """_summary_
+        """_summary_: log metrics for the model run
 
         Args:
-            metric_dict (dict): _description_
+            metric_dict (dict): key value pair with metric name and metric value
 
         Raises:
-            TypeError: _description_
+            TypeError: Expected 'dict'
         """
         if "metrics" not in self.info:
             self.info["metrics"]={}
@@ -192,15 +196,15 @@ class PyMLPipe:
         
         
     def log_matric(self,metric_name,metric_value):
-        """_summary_
+        """_summary_: log single metric for the model run
 
         Args:
-            metric_name (_type_): _description_
-            metric_value (_type_): _description_
+            metric_name (str): name of the metric
+            metric_value (int or float): value of the metric
 
         Raises:
-            TypeError: _description_
-            TypeError: _description_
+            TypeError: metric_name expected to be str
+            TypeError: metric_value expected to be int or float
         """
         if "metrics" not in self.info:
             self.info["metrics"]={}
@@ -213,13 +217,13 @@ class PyMLPipe:
        
         
     def log_params(self,param_dict:dict):
-        """_summary_
+        """_summary_: log parameters for the model run
 
         Args:
-            param_dict (dict): _description_
+            param_dict (dict): key value pair with parameter name and parameter value
 
         Raises:
-            TypeError: _description_
+            TypeError: Expected 'dict'
         """
         if "params" not in self.info:
             self.info["params"]={}
@@ -230,35 +234,36 @@ class PyMLPipe:
         
         
     def log_param(self,param_name,param_value):
-        """_summary_
+        """_summary_:log single parameter for the model run
 
         Args:
-            param_name (_type_): _description_
-            param_value (_type_): _description_
+            param_name (str): _description_
+            param_value (int or float or str): _description_
 
         Raises:
-            TypeError: _description_
-            TypeError: _description_
+            TypeError: param_name Expected 'str' 
+            TypeError: param_value Expected 'int','float','str' 
         """
         if "params" not in self.info:
             self.info["params"]={}
         mv=None
         if not isinstance(param_value,int) and not isinstance(param_value,float) and not isinstance(param_value,str): 
-            raise TypeError("unsupported type, 'param_value' Expected 'int','float','str) got "+str(type(metric_value)))
+            raise TypeError("unsupported type, 'param_value' Expected 'int','float','str' got "+str(type(metric_value)))
         if not isinstance(param_name,str): 
             raise TypeError("unsupported type, 'param_name' Expected 'str' got "+str(type(metric_name)))
         self.info["params"][param_name]=param_value
     
-    def register_artifact(self,artifact_name,artifact):
-        """_summary_
+    def register_artifact(self,artifact_name,artifact,artifact_type="training"):
+        """_summary_: Save Artifact as part of data verion control
 
         Args:
-            artifact_name (_type_): _description_
-            artifact (_type_): _description_
+            artifact_name (str): name of the artifact
+            artifact (pandas DataFrame): pandas DataFrame object with the data
+            artifact_type (str, optional): Defaults to "training". artifact_type can be [training,testing,validation,dev,prod]
 
         Raises:
-            TypeError: _description_
-            ValueError: _description_
+            TypeError: Expected DataFrame object
+            ValueError: artifact_name should have a string value
         """
         if not isinstance(artifact, pd.DataFrame):
             raise TypeError("Please provide DataFrame in 'artifact'")
@@ -272,15 +277,16 @@ class PyMLPipe:
         self.info["artifact"].append(path)
         
         
-    def register_artifact_with_path(self,artifact):
+    def register_artifact_with_path(self,artifact,artifact_type="training"):
         """_summary_
 
         Args:
-            artifact (_type_): _description_
+            artifact (str): path of the artifact
+            artifact_type (str, optional): _description_. Defaults to "training".artifact_type can be [training,testing,validation,dev,prod]
 
         Raises:
-            TypeError: _description_
-            ValueError: _description_
+            TypeError: artifact path should be str
+            ValueError: artifact path should be correct
         """
         if not isinstance(artifact, str):
             raise TypeError("Please provide full path of artifact")
@@ -294,28 +300,28 @@ class PyMLPipe:
         
         
     def get_info(self):
-        """_summary_
+        """_summary_: get the whole run details
 
         Returns:
-            _type_: _description_
+            dict: information about the whole run
         """
         return self.info 
     
     
     def get_artifact(self):
-        """_summary_
+        """_summary_: get the artifact details
 
         Returns:
-            _type_: _description_
+            dict: returns the artifact detail
         """
         return self.info["artifact"]
     
     def _write_info_experiment(self,experiment_name,path):
-        """_summary_
+        """_summary_: writes to the experiment schema
 
         Args:
-            experiment_name (_type_): _description_
-            path (_type_): _description_
+            experiment_name (str): name of the experiment
+            path (str): path to save the run details
         """
         fulllist={}
         if os.path.exists(os.path.join(self.feature_store,"experiment.yaml")):
@@ -340,11 +346,11 @@ class PyMLPipe:
                 
     
     def _write_info_run(self,experiment_name,run_id):
-        """_summary_
+        """_summary_:writes to the run schema
 
         Args:
-            experiment_name (_type_): _description_
-            run_id (_type_): _description_
+            experiment_name (str): name of the experiment
+            run_id (str): ID for the running instance
         """
         fulllist={}
         
