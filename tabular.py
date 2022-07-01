@@ -70,7 +70,11 @@ class PyMLPipe:
         self.folders=None
         self.experiment_path=None
         self.info={}
-        
+        self.info["tags"]=[]
+        self.info["metrics"]={}
+        self.info["params"]={}
+        self.info["artifact"]=[]
+        self.info["model"]={}
         
     @contextmanager
     def run(self,experiment_name=None,runid=None):
@@ -100,8 +104,16 @@ class PyMLPipe:
         #self.pytorch=Pytorch(self.context_manager.folders)
         yield r
         self.info["execution_time"]=str(datetime.datetime.now()).split(".")[0]
-        
-        self.info["model"]={"model_name":self.scikit_learn.model_name,"model_path":self.scikit_learn.model_path}
+        if self.scikit_learn.registered:
+            self.info["model"]={"model_name":self.scikit_learn.model_name,
+                                "model_path":self.scikit_learn.model_path,
+                                "model_params": self.scikit_learn.model_params,
+                                "model_class":self.scikit_learn.model_class,
+                                "model_type":self.scikit_learn.model_type,
+                                "model_tags":self.scikit_learn.model_tags,
+                                "registered":self.scikit_learn.registered
+                                }
+        #print(self.info)
         self.context_manager.write_to_yaml(self.info)
         
     
@@ -123,8 +135,8 @@ class PyMLPipe:
         Raises:
             TypeError: Supported type 'str','int','float'
         """
-        if "tags" not in self.info:
-            self.info["tags"]=[]
+        
+            
         if isinstance(tag_dtag_valueict,dict) or isinstance(tag_dtag_valueict,list) or isinstance(tag_dtag_valueict,set): 
            raise TypeError("unsupported type, Expected 'str','int','float' got "+str(type(tag_dict)))
         self.info["tags"].append(tag_value)
@@ -140,8 +152,7 @@ class PyMLPipe:
         Raises:
             TypeError: Expected 'list'
         """
-        if "tags" not in self.info:
-            self.info["tags"]=[]
+       
         if isinstance(tag_dict,list): 
             self.info["tags"].extend(tag_dict)
         else:
@@ -187,8 +198,7 @@ class PyMLPipe:
         Raises:
             TypeError: Expected 'dict'
         """
-        if "metrics" not in self.info:
-            self.info["metrics"]={}
+           
         if isinstance(metric_dict,dict): 
             self.info["metrics"].update(metric_dict)
         else:
@@ -206,8 +216,7 @@ class PyMLPipe:
             TypeError: metric_name expected to be str
             TypeError: metric_value expected to be int or float
         """
-        if "metrics" not in self.info:
-            self.info["metrics"]={}
+        
         mv=None
         if not isinstance(metric_value,int) and not isinstance(metric_value,float): 
             raise TypeError("unsupported type, 'metric_value' Expected 'int','float' got "+str(type(metric_value)))
@@ -225,8 +234,8 @@ class PyMLPipe:
         Raises:
             TypeError: Expected 'dict'
         """
-        if "params" not in self.info:
-            self.info["params"]={}
+        
+            
         if isinstance(param_dict,dict): 
             self.info["params"].update(param_dict)
         else:
@@ -244,8 +253,7 @@ class PyMLPipe:
             TypeError: param_name Expected 'str' 
             TypeError: param_value Expected 'int','float','str' 
         """
-        if "params" not in self.info:
-            self.info["params"]={}
+       
         mv=None
         if not isinstance(param_value,int) and not isinstance(param_value,float) and not isinstance(param_value,str): 
             raise TypeError("unsupported type, 'param_value' Expected 'int','float','str' got "+str(type(metric_value)))
@@ -272,8 +280,8 @@ class PyMLPipe:
         path=os.path.join(self.context_manager.folders["artifacts"],artifact_name)
                           
         artifact.to_csv(path,index=False)
-        if "artifact" not in self.info:
-            self.info["artifact"]=[]
+        
+            
         
         self.info["artifact"].append({
             "name":artifact_name,
@@ -299,8 +307,7 @@ class PyMLPipe:
             raise ValueError("Please provide correct path of artifact")
         
         shutil.copy(artifact, self.context_manager.folders["artifacts"])
-        if "artifact" not in self.info:
-            self.info["artifact"]=[]
+        
         path=os.path.join(self.context_manager.folders["artifacts"],os.path.basename(artifact))
         self.info["artifact"].append({
             "name":os.path.basename(path),
@@ -388,6 +395,11 @@ class ScikitLearn:
         self.folders=folders
         self.model_name=""
         self.model_path=""
+        self.model_class=""
+        self.model_type=""
+        self.model_params={}
+        self.model_tags={}
+        self.registered=False
         
         
     def register_model(self,model_name,model):
@@ -398,6 +410,11 @@ class ScikitLearn:
             raise TypeError("Error:Expected ScikitLearn Module!!!!")
         self.model_name=model_name
         self.model_path=os.path.join(self.folders["models"],model_name+'.pkl')
+        self.model_class=type(model).__name__
+        self.model_params=model.get_params()
+        self.model_tags={tag:str(value) for tag,value in model._get_tags().items()}
+        self.model_type="scikit-learn"
+        self.registered=True
     
 
 class Pytorch:

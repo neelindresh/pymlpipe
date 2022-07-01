@@ -22,6 +22,24 @@
         margin:2px;
     }
   </style>
+  <script>
+    current_table="run_details"
+    function show_tab(id){
+      if(id!=current_table){
+          document.getElementById(id).style.display='block'
+          document.getElementById(current_table).style.display='none'
+          //document.getElementById("sidebar_"+id).classList.add("sidebar-active")
+          
+          //document.getElementById("sidebar_"+current_table).classList.remove("sidebar-active")
+          current_table=id
+          //metrics=[]
+          //run_ids=[]
+          //remove_plot_bar_group()
+          //uncheck_all()
+      }
+      
+  }
+  </script>
   <body>
     <section class="section">
         <div class="container">
@@ -47,17 +65,16 @@
             </p>
             <ul class="menu-list">
             
-            <li ><a href="" >Run Details</a></li>
+            <li ><a href="#" onclick="show_tab('run_details')">Run Details</a></li>
             <hr>
-            <li ><a href="" >Artifacts</a></li>
+            <li ><a href="#" onclick="show_tab('artifact_details')">Artifacts</a></li>
             <hr>
-            <li ><a href="" >Metrics</a></li>
+            <li ><a href="#"  onclick="show_tab('metrics_details')">Metrics</a></li>
             <hr>
-            <li ><a href="" >Models</a></li>
+            <li ><a href="#"  onclick="show_tab('model_details')">Models</a></li>
             <hr>
-            <li ><a href="" >Tags</a></li>
-            <hr>
-            <li ><a href="" >Data Schema</a></li>
+
+            <li ><a href="#"  onclick="show_tab('artifact_details')">Data Schema</a></li>
                 
             </ul>
             
@@ -77,32 +94,184 @@
                 <tbody>
                   {%for details in expertiment_details%}
                   <tr>
-                    <td> {{details}}</td>
+                    <td>{{details}}</td>
+                    {%if details=='TAGS'%}
+                    <td> 
+                      {%for tag in expertiment_details[details]%}
+                      <span class="tag is-warning ">{{tag}}</span>
+                      {%endfor%}
+                    
+                    </td>
+                    {%elif details=='VERSION'%}
+                    <td><span class="tag is-danger is-light is-medium">{{expertiment_details[details]}}</span></td>
+                    {%else%}
                     <td> {{expertiment_details[details]}}</td>
+                    {%endif%}
                   </tr>
                   {%endfor%}
                 </tbody>
               </table>
             </div>
-            <div id="artifact_details">
+            <div id="artifact_details" style="display:none">
               <h1 class="subtitle ">Artifacts </h1>
               <table class="table is-striped" style="width:100%;">
                 <thead>
                   <tr>
-                    <th>Parmaters</th>
-                    <th>Values</th>
+                    <th>Artifact name</th>
+                    <th>Tag</th>
+                    <th>Actions</th>
                   </tr>
                   
                 </thead>
                 <tbody>
-                  {%for details in expertiment_details%}
+                  {%for details in artifact_details%}
                   <tr>
-                    <td> {{details}}</td>
-                    <td> {{expertiment_details[details]}}</td>
+                    <td> {{details["name"]}}</td>
+                    {%if details["tag"]=='training'%}
+                    <td>
+                      <span class="tag is-link is-medium">{{details["tag"]}}</span>
+                      
+                    </td>
+                    {%elif details["tag"]=='validation' or details["tag"]=='prod' %}
+                    <td><span class="tag is-primary is-medium">{{details["tag"]}}</span></td>
+                    {%elif details["tag"]=='test' %}
+                    <td ><span class="tag is-info is-medium">{{details["tag"]}}</span></td>
+                    {%elif details["tag"]=='dev'%}
+                    <td > <span class="tag is-success is-medium">{{details["tag"]}}</span></td>
+                    {% else %}
+                    <td ><span class="tag is-medium">{{details["tag"]}}</span></td>
+                    {% endif %}
+                    <td><a href="/download_artifact/{{experiments}}@{{run_id}}@{{details['name']}}">
+                      <img src="{{ url_for('static', filename='download.png') }}" height="25" width="25">
+                    </a></td>
                   </tr>
                   {%endfor%}
                 </tbody>
               </table>
+            </div>
+            <div id="metrics_details" style="display:none">
+              <h1 class="subtitle ">Merics </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Metrics name</th>
+                    <th>Metrics values</th>
+                    <th>Related</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in metrics_details%}
+                  <tr>
+                    <td> {{details}}</td>
+                    <td> {{metrics_details[details]}}</td>
+                    <td></td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+            <div id="model_details" style="display:none">
+              <h1 class="subtitle ">Model Details </h1>
+              <div class="columns">
+                <div class="column">
+                  {%if model_details|length !=0%}
+                  <h6 class="subtitle is-6">Model Information </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Model</th>
+                        <th>Values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td> Model Name</td>
+                        <td> {{model_details["model_name"]}}</td>
+                        
+                      <tr>
+                        <td> Model Type</td>
+                        <td>{{model_details["model_type"]}}</td>
+                        
+                      </tr>
+                      <tr>
+                        <td> Model Class</td>
+                        <td>{{model_details["model_class"]}}</td>
+                        
+                      </tr>
+                      
+                        
+                    </tbody>
+                  </table>
+                  {%endif%}
+                  {%if param_details|length !=0%}
+                  <h6 class="subtitle is-6">User Defined Parmaters </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>User Param name</th>
+                        <th>User Param values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in param_details%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{param_details[details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                  {%endif%}
+                  <h6 class="subtitle is-6">Trained Model Tags </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Model Tag Name</th>
+                        <th>Model Tag Values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in model_details['model_tags']%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{model_details['model_tags'][details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="column">
+                  <h6 class="subtitle is-6">Trained Model Parmaters </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Parameter name</th>
+                        <th>Parameter values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in model_details['model_params']%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{model_details['model_params'][details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                </div>
+              </div>    
             </div>
         </div>
       </div>

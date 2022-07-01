@@ -250,7 +250,7 @@
                     {%for run in runs[experiment]['runs']%}
                     <tr>
                         <td><input type="checkbox" onclick="checkrow('{{run}}')" id="checkbox_{{run}}"></td>
-                        <td><a href="{{experiment}}@{{run}}">{{run[:13]}}...</a></td>
+                        <td><a href="/run/{{experiment}}@{{run}}">{{run[:13]}}...</a></td>
                         <td>{{run_details[run].execution_time}}</td>
                         <td>{{run_details[run].model.model_name}}</td>
                         <td>{{run_details[run].version}}</td>

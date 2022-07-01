@@ -33,7 +33,7 @@ def index():
                                  metrics=list(set(metrics)),
                                  current_experiment=exp_names
                                  )
-@app.route("/<run_id>/")
+@app.route("/run/<run_id>/")
 def runpage(run_id):
     experiments,run_id=run_id.split("@")
     experiment_lists=yamlio.read_yaml(os.path.join(MODEL_DIR,EXPERIMENT_FILE))
@@ -55,8 +55,24 @@ def runpage(run_id):
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
-                                 expertiment_details=expertiment_details
+                                 expertiment_details=expertiment_details,
+                                 artifact_details=run_details["artifact"],
+                                 metrics_details=run_details["metrics"],
+                                 model_details=run_details["model"],
+                                 param_details=run_details["params"],
+                                 
                                  )
+@app.route("/download_artifact/<uid>")
+def download_artifact(uid):
+    experiments,run_id,filename=uid.split("@")
+    #run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
+    return flask.send_from_directory(os.path.join(MODEL_DIR,experiments,run_id,"artifacts"), filename,as_attachment=True)
+    
+@app.route("/deployments/<run_id>/")
+def deployments(run_id):
+    experiments,run_id=run_id.split("@")
+    return {}
+
 
 def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
