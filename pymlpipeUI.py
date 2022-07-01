@@ -67,6 +67,14 @@ def download_artifact(uid):
     experiments,run_id,filename=uid.split("@")
     #run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
     return flask.send_from_directory(os.path.join(MODEL_DIR,experiments,run_id,"artifacts"), filename,as_attachment=True)
+
+@app.route("/download_model/<uid>")
+def download_model(uid):
+    experiments,run_id,filename,model_type=uid.split("@")
+    if model_type=="scikit-learn":
+        filename=filename+".pkl"
+    #run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
+    return flask.send_from_directory(os.path.join(MODEL_DIR,experiments,run_id,"models"), filename,as_attachment=True)
     
 @app.route("/deployments/<run_id>/")
 def deployments(run_id):

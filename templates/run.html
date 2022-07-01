@@ -172,7 +172,13 @@
               </table>
             </div>
             <div id="model_details" style="display:none">
-              <h1 class="subtitle ">Model Details </h1>
+              <h1 class="subtitle ">Model Details 
+                {%if model_details|length !=0%}
+                <a href="/download_model/{{experiments}}@{{run_id}}@{{model_details['model_name']}}@{{model_details['model_type']}}">
+                  <img src="{{ url_for('static', filename='download.png') }}" height="25" width="25">
+                </a>
+                {%endif%}
+              </h1>
               <div class="columns">
                 <div class="column">
                   {%if model_details|length !=0%}
