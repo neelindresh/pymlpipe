@@ -1,0 +1,36 @@
+{% extends "template.html" %}
+
+{% block content %}
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+        <ul>
+            <li><a href="/">home</a></li>
+            <li class="is-active"><a href="#" aria-current="page">deployments</li>
+        </ul>
+    </nav>
+    <table class="table is-striped" style="width:100%;">
+        <thead>
+          <tr>
+            <th>Experiment No</th>
+            <th>Run ID</th>
+            <th>Deployment No</th>
+            <th>Deployment URL</th>
+            <th>Status</th>
+          </tr>
+          
+        </thead>
+        <tbody>
+          {%for details in ALL_DEPLOYED_MODELS%}
+          <tr>
+            <td>{{details["experiment_id"]}}</td>
+            <td>{{details["run_id"]}}</td>
+            <td>{{details["model_deployment_number"]}}</td>
+            <td><a href="{{details['model_url']}}">{{details["model_url"]}}</a></td>
+            <td>{{details["status"]}}</td>
+            
+           
+          </tr>
+          {%endfor%}
+        </tbody>
+      </table>
+  
+{% endblock %}

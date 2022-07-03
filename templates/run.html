@@ -54,7 +54,9 @@
                 <li class="is-active"><a href="#" aria-current="page">{{run_id}}</a></li>
             </ul>
         </nav>
-        
+        <div style="display:flex;flex-direction:row-reverse">
+            <a class="button is-primary" href="/deployments/{{experiments}}@{{run_id}}">Deploy</a>
+        </div>
     </section>
     <section class="section">
       <div class="columns">
@@ -74,13 +76,15 @@
             <li ><a href="#"  onclick="show_tab('model_details')">Models</a></li>
             <hr>
 
-            <li ><a href="#"  onclick="show_tab('artifact_details')">Data Schema</a></li>
+            <li ><a href="#"  onclick="show_tab('schema_details')">Data Schema</a></li>
                 
             </ul>
             
         </aside>
         </div>
+        <!-- BREAK-->
         <div class="column">
+          <!-- BREAK-->
             <div id="run_details">
               <h1 class="subtitle ">Run Details </h1>
               <table class="table is-striped" style="width:100%;">
@@ -112,6 +116,7 @@
                 </tbody>
               </table>
             </div>
+            <!-- BREAK-->
             <div id="artifact_details" style="display:none">
               <h1 class="subtitle ">Artifacts </h1>
               <table class="table is-striped" style="width:100%;">
@@ -149,6 +154,7 @@
                 </tbody>
               </table>
             </div>
+            <!-- BREAK-->
             <div id="metrics_details" style="display:none">
               <h1 class="subtitle ">Merics </h1>
               <table class="table is-striped" style="width:100%;">
@@ -171,6 +177,7 @@
                 </tbody>
               </table>
             </div>
+            <!-- BREAK-->
             <div id="model_details" style="display:none">
               <h1 class="subtitle ">Model Details 
                 {%if model_details|length !=0%}
@@ -279,6 +286,35 @@
                 </div>
               </div>    
             </div>
+            <!-- BREAK-->
+            <div id="schema_details" style="display:none">
+              <h1 class="subtitle ">Schema Details </h1>
+              
+              {%for schema_data in schema_details%}
+              <h6 class="subtitle is-6"><b>Name:</b> {{schema_data["name"]}} </h6>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Columns Name</th>
+                    {%for col_name in schema_data["details"]%}
+                    <th>{{col_name}}</th>
+                    {%endfor%}
+                  </tr>
+                </thead>
+                <tbody>
+                  {%for col_name in schema_data["schema"]%}
+                    <tr>
+                      <td>{{col_name}}</td>
+                      {%for schema_details in schema_data["details"]%}
+                      <td>{{schema_data["schema"][col_name][schema_details]}}</td>
+                      {%endfor%}
+                    </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+              {%endfor%}
+              
+            <!-- BREAK-->
         </div>
       </div>
     </section>

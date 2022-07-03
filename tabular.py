@@ -1,5 +1,7 @@
 import os
 from pymlpipe.utils.database import create_folder
+from pymlpipe.utils.getschema import schema_
+
 import uuid
 import yaml
 from contextlib import contextmanager
@@ -75,6 +77,7 @@ class PyMLPipe:
         self.info["params"]={}
         self.info["artifact"]=[]
         self.info["model"]={}
+        self.info["artifact_schema"]=[]
         
     @contextmanager
     def run(self,experiment_name=None,runid=None):
@@ -278,8 +281,10 @@ class PyMLPipe:
         if artifact_name=="" or artifact_name==None:
             raise ValueError("Please provide a name in 'artifact_name' which is not '' or None")
         path=os.path.join(self.context_manager.folders["artifacts"],artifact_name)
-                          
+        dataschema=artifact.describe(include='all')
+        
         artifact.to_csv(path,index=False)
+        
         
             
         
@@ -288,6 +293,13 @@ class PyMLPipe:
             "path":path,
             "tag":artifact_type
         })
+        schema_data,schema_details=schema_(artifact)
+        self.info["artifact_schema"].append({
+                "name":artifact_name,
+                "schema":schema_data,
+                "details":schema_details
+            }
+        )
         
         
     def register_artifact_with_path(self,artifact,artifact_type="training"):
@@ -314,6 +326,24 @@ class PyMLPipe:
             "path":path,
             "tag":artifact_type
         })
+        filename=os.path.basename(artifact)
+        if filename.endswith('.csv'):
+            artifact=pd.read_csv(path)
+        elif filename.endswith('.xlxs'):
+            artifact=pd.read_excel(path)
+        elif filename.endswith('.parquet'):
+            artifact=pd.read_parquet(path)
+        else:
+            print("Error: Unknown file type cannot generate Schema!!!!")
+            return
+        
+        schema_data,schema_details=schema_(artifact)
+        self.info["artifact_schema"].append({
+                "name":filename,
+                "schema":schema_data,
+                "details":schema_details
+            }
+        )
         
     def get_info(self):
         """_summary_: get the whole run details
@@ -416,9 +446,3 @@ class ScikitLearn:
         self.model_type="scikit-learn"
         self.registered=True
     
-
-class Pytorch:
-    def __init__(self):
-        pass
-    def register_model(self):
-        pass
