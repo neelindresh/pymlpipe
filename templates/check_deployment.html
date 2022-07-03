@@ -1,0 +1,36 @@
+{% extends "template.html" %}
+
+{% block content %}
+<script>
+    function prettyPrint() {
+        var ugly = document.getElementById('myTextArea').value;
+        console.log(ugly)
+        var obj = JSON.parse(ugly);
+        var pretty = JSON.stringify(obj, undefined, 4);
+        document.getElementById('myTextArea').value = pretty;
+    }
+</script>
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/">Bulma</a></li>
+        <li><a href="/show_deployments/">Deployments</a></li>
+        <li class="is-active"><a href="#" aria-current="page">{{deployment}}</a></li>
+      </ul>
+</nav>
+<div>
+    <div class="box">
+        <h1 class="subtitle" style="color:darkslategray">/POST/</h1>
+    </div>
+    <!--<form action="/predict/{{deployment}}" method="POST">-->
+        <div class="box">
+            <textarea class="textarea" id="myTextArea" placeholder="e.g. Hello world" onclick="prettyPrint()" name="random_data"></textarea>
+            <hr>
+            <button class="button is-primary" >
+
+                Predict
+            </button>
+        </div>
+    <!--</form>-->
+    
+</div>
+{% endblock %}

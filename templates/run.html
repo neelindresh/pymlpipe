@@ -3,19 +3,320 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hello Bulma!</title>
+    <title>PyMLPipe</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   </head>
+  <style>
+    .center-text{
+        text-align: center
+    }
+    .dropdown-inactive{
+        display: none;
+    }
+    .dropdown-active{
+        display: block;
+    }
+    hr{
+        margin:2px;
+    }
+  </style>
+  <script>
+    current_table="run_details"
+    function show_tab(id){
+      if(id!=current_table){
+          document.getElementById(id).style.display='block'
+          document.getElementById(current_table).style.display='none'
+          //document.getElementById("sidebar_"+id).classList.add("sidebar-active")
+          
+          //document.getElementById("sidebar_"+current_table).classList.remove("sidebar-active")
+          current_table=id
+          //metrics=[]
+          //run_ids=[]
+          //remove_plot_bar_group()
+          //uncheck_all()
+      }
+      
+  }
+  </script>
   <body>
-  <section class="section">
-    <div class="container">
-      <h1 class="title">
-        Hello World
-      </h1>
-      <p class="subtitle">
-        {{run_id}}
-      </p>
-    </div>
-  </section>
+    <section class="section">
+        <div class="container">
+         <h1 class="title center-text">PyMLPipe</h1>
+        </div>
+    </section>
+    <section class="container">
+        
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="/">home</a></li>
+                <li class="is-active"><a href="#" aria-current="page">{{run_id}}</a></li>
+            </ul>
+        </nav>
+        <div style="display:flex;flex-direction:row-reverse">
+            <a class="button is-primary" href="/deployments/{{experiments}}@{{run_id}}">Deploy</a>
+        </div>
+    </section>
+    <section class="section">
+      <div class="columns">
+        <div class="column is-one-fifth">
+          <aside class="menu">
+            <p class="menu-label">
+            Run Details
+            </p>
+            <ul class="menu-list">
+            
+            <li ><a href="#" onclick="show_tab('run_details')">Run Details</a></li>
+            <hr>
+            <li ><a href="#" onclick="show_tab('artifact_details')">Artifacts</a></li>
+            <hr>
+            <li ><a href="#"  onclick="show_tab('metrics_details')">Metrics</a></li>
+            <hr>
+            <li ><a href="#"  onclick="show_tab('model_details')">Models</a></li>
+            <hr>
+
+            <li ><a href="#"  onclick="show_tab('schema_details')">Data Schema</a></li>
+                
+            </ul>
+            
+        </aside>
+        </div>
+        <!-- BREAK-->
+        <div class="column">
+          <!-- BREAK-->
+            <div id="run_details">
+              <h1 class="subtitle ">Run Details </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Parmaters</th>
+                    <th>Values</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in expertiment_details%}
+                  <tr>
+                    <td>{{details}}</td>
+                    {%if details=='TAGS'%}
+                    <td> 
+                      {%for tag in expertiment_details[details]%}
+                      <span class="tag is-warning ">{{tag}}</span>
+                      {%endfor%}
+                    
+                    </td>
+                    {%elif details=='VERSION'%}
+                    <td><span class="tag is-danger is-light is-medium">{{expertiment_details[details]}}</span></td>
+                    {%else%}
+                    <td> {{expertiment_details[details]}}</td>
+                    {%endif%}
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+            <!-- BREAK-->
+            <div id="artifact_details" style="display:none">
+              <h1 class="subtitle ">Artifacts </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Artifact name</th>
+                    <th>Tag</th>
+                    <th>Actions</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in artifact_details%}
+                  <tr>
+                    <td> {{details["name"]}}</td>
+                    {%if details["tag"]=='training'%}
+                    <td>
+                      <span class="tag is-link is-medium">{{details["tag"]}}</span>
+                      
+                    </td>
+                    {%elif details["tag"]=='validation' or details["tag"]=='prod' %}
+                    <td><span class="tag is-primary is-medium">{{details["tag"]}}</span></td>
+                    {%elif details["tag"]=='test' %}
+                    <td ><span class="tag is-info is-medium">{{details["tag"]}}</span></td>
+                    {%elif details["tag"]=='dev'%}
+                    <td > <span class="tag is-success is-medium">{{details["tag"]}}</span></td>
+                    {% else %}
+                    <td ><span class="tag is-medium">{{details["tag"]}}</span></td>
+                    {% endif %}
+                    <td><a href="/download_artifact/{{experiments}}@{{run_id}}@{{details['name']}}">
+                      <img src="{{ url_for('static', filename='download.png') }}" height="25" width="25">
+                    </a></td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+            <!-- BREAK-->
+            <div id="metrics_details" style="display:none">
+              <h1 class="subtitle ">Merics </h1>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Metrics name</th>
+                    <th>Metrics values</th>
+                    <th>Related</th>
+                  </tr>
+                  
+                </thead>
+                <tbody>
+                  {%for details in metrics_details%}
+                  <tr>
+                    <td> {{details}}</td>
+                    <td> {{metrics_details[details]}}</td>
+                    <td></td>
+                  </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+            </div>
+            <!-- BREAK-->
+            <div id="model_details" style="display:none">
+              <h1 class="subtitle ">Model Details 
+                {%if model_details|length !=0%}
+                <a href="/download_model/{{experiments}}@{{run_id}}@{{model_details['model_name']}}@{{model_details['model_type']}}">
+                  <img src="{{ url_for('static', filename='download.png') }}" height="25" width="25">
+                </a>
+                {%endif%}
+              </h1>
+              <div class="columns">
+                <div class="column">
+                  {%if model_details|length !=0%}
+                  <h6 class="subtitle is-6">Model Information </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Model</th>
+                        <th>Values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td> Model Name</td>
+                        <td> {{model_details["model_name"]}}</td>
+                        
+                      <tr>
+                        <td> Model Type</td>
+                        <td>{{model_details["model_type"]}}</td>
+                        
+                      </tr>
+                      <tr>
+                        <td> Model Class</td>
+                        <td>{{model_details["model_class"]}}</td>
+                        
+                      </tr>
+                      
+                        
+                    </tbody>
+                  </table>
+                  {%endif%}
+                  {%if param_details|length !=0%}
+                  <h6 class="subtitle is-6">User Defined Parmaters </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>User Param name</th>
+                        <th>User Param values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in param_details%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{param_details[details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                  {%endif%}
+                  <h6 class="subtitle is-6">Trained Model Tags </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Model Tag Name</th>
+                        <th>Model Tag Values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in model_details['model_tags']%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{model_details['model_tags'][details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="column">
+                  <h6 class="subtitle is-6">Trained Model Parmaters </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Parameter name</th>
+                        <th>Parameter values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in model_details['model_params']%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{model_details['model_params'][details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                </div>
+              </div>    
+            </div>
+            <!-- BREAK-->
+            <div id="schema_details" style="display:none">
+              <h1 class="subtitle ">Schema Details </h1>
+              
+              {%for schema_data in schema_details%}
+              <h6 class="subtitle is-6"><b>Name:</b> {{schema_data["name"]}} </h6>
+              <table class="table is-striped" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Columns Name</th>
+                    {%for col_name in schema_data["details"]%}
+                    <th>{{col_name}}</th>
+                    {%endfor%}
+                  </tr>
+                </thead>
+                <tbody>
+                  {%for col_name in schema_data["schema"]%}
+                    <tr>
+                      <td>{{col_name}}</td>
+                      {%for schema_details in schema_data["details"]%}
+                      <td>{{schema_data["schema"][col_name][schema_details]}}</td>
+                      {%endfor%}
+                    </tr>
+                  {%endfor%}
+                </tbody>
+              </table>
+              {%endfor%}
+              
+            <!-- BREAK-->
+        </div>
+      </div>
+    </section>
   </body>
 </html>

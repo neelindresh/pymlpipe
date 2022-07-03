@@ -1,0 +1,78 @@
+{% extends "template.html" %}
+
+{% block content %}
+<script>
+    function stop_deployment(deployment_no){
+        console.log(deployment_no)
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                location.reload();
+            }
+        };
+        xhttp.open("GET", "/deployment/stop/"+deployment_no[0], true);
+        //xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+    function start_deployment(deployment_no){
+        console.log(deployment_no)
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                location.reload();
+
+            }
+        };
+        xhttp.open("GET", "/deployment/start/"+deployment_no[0], true);
+        //xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+</script>
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+        <ul>
+            <li><a href="/">home</a></li>
+            <li class="is-active"><a href="#" aria-current="page">deployments</li>
+        </ul>
+    </nav>
+    
+    <table class="table is-striped" style="width:100%;">
+        <thead>
+          <tr>
+            <th>Experiment No</th>
+            <th>Run ID</th>
+            <th>Deployment No</th>
+            <th>Deployment URL</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+          
+        </thead>
+        <tbody>
+          {%for details in ALL_DEPLOYED_MODELS%}
+          <tr>
+            <td>{{details["experiment_id"]}}</td>
+            <td>{{details["run_id"]}}</td>
+            <td>{{details["model_deployment_number"]}}</td>
+            
+            <td>
+                {%if details["status"]=='running'%}
+                <a href="{{details['model_url']}}">{{details["model_url"]}}</a>
+                {%endif%}
+            </td>
+            <td>{{details["status"]}}</td>
+            <td>
+                {%if details["status"]=='running'%}
+                <button class="button is-danger" onclick="stop_deployment({{[details['model_deployment_number']]}})">Stop</button>
+                {%elif details["status"]=='stopped'%}
+                <button class="button is-success" onclick="start_deployment({{[details['model_deployment_number']]}})">Start</button>
+                {%endif%}
+                
+            </td>
+            
+           
+          </tr>
+          {%endfor%}
+        </tbody>
+      </table>
+  
+{% endblock %}
