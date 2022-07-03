@@ -27,6 +27,14 @@
         background: aquamarine;
         border: 1px solid;
     }
+    td{
+        
+        /*height: 30%;*/
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+        max-width: 100px;
+    }
   </style>
   <script>
     const run_data = {{ run_details | tojson }} //can be improved
@@ -260,9 +268,13 @@
                         <td>{{run_details[run].execution_time}}</td>
                         <td>{{run_details[run].model.model_name}}</td>
                         <td>{{run_details[run].version}}</td>
-                        <td>{{",".join(run_details[run].tags)}}</td>
+                        <td>
+                            {%for tag in run_details[run].tags%}
+                            <span class="tag is-warning ">{{tag}}</span>
+                            {%endfor%}
+                        </td>
                         {%for metric in metrics%}
-                        <td>{{run_details[run]["metrics"][metric]}}</td>
+                        <td>{{run_details[run]["metrics"][metric]|string}}</td>
                         {%endfor%}
                     </tr>
                     {%endfor%}

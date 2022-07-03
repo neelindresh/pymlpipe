@@ -26,5 +26,5 @@ def schema_(data):
         }
         if len(details)==0:
             details=list(schema[col].keys())
-    print("-------->",schema)
+    #print("-------->",schema)
     return schema,details

@@ -2,10 +2,13 @@ import flask
 import os
 from pymlpipe.utils import yamlio
 from pymlpipe.utils import _sklearn_prediction
+from flask_api import FlaskAPI
+import numpy as np
+import json
 
+#app=flask.Flask(__name__)
 
-
-app=flask.Flask(__name__)
+app = FlaskAPI(__name__)
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
@@ -23,6 +26,7 @@ def index():
     metrics=[]
     for experiment,run_data in experiment_lists.items():
         for run_id in run_data["runs"]:
+            print(run_data['experiment_path'],run_id,"info.yaml")
             run_folder=os.path.join(run_data['experiment_path'],run_id,"info.yaml")
             run_details=yamlio.read_yaml(run_folder)
             info[run_id]=run_details
@@ -112,21 +116,70 @@ def show_deployments():
     
 @app.route("/predict/<hashno>",methods=["GET","POST"])
 def predict(hashno):
-    if len(PREDICTORS)==0:
-        ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
-        for i in ALL_DEPLOYED_MODELS:
-            deployed=_sklearn_prediction.Deployment(i["model_path"])
-            PREDICTORS[i['model_deployment_number']]=deployed
+    print(PREDICTORS)
     if flask.request.method=="POST":
         #data=flask.request.form['random_data']
-        data=flask.request.data()
-        print(data)
-    return flask.render_template('check_deployment.html',
-                                 deployment=hashno
-                                 )
+        data=flask.request.data
+        predictions=PREDICTORS[hashno].predict(np.array(data['data']))
+        
+        return {
+            "deployment no":hashno,
+            "predictions":[int(p) for p in predictions]
+        }
+    return {
+        "data":[
+            [
+                5.6,
+                3.0,
+                4.5,
+                1.5
+            ],
+            [
+                5.6,
+                3.0,
+                4.5,
+                1.5
+            ]
+        ]
+    }
+@app.route("/deployment/stop/<deployment_no>",methods=["GET"])                
+def stop_deployment(deployment_no):
+    global PREDICTORS
+    ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
+    for idx,d in enumerate(ALL_DEPLOYED_MODELS):
+        
+        if d['model_deployment_number']==deployment_no:
+            print("here here")
+            ALL_DEPLOYED_MODELS[idx]['status']="stopped"
+    print(ALL_DEPLOYED_MODELS)
+    yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
+    PREDICTORS={i:j for i,j in PREDICTORS.items() if i!=deployment_no}
+    return {"status":200}
+
+
+@app.route("/deployment/start/<deployment_no>",methods=["GET"])                
+def start_deployment(deployment_no):
+    global PREDICTORS
+    ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
+    for idx,d in enumerate(ALL_DEPLOYED_MODELS):
+       
+        if d['model_deployment_number']==deployment_no:
+            
+            ALL_DEPLOYED_MODELS[idx]['status']="running"
+            PREDICTORS[deployment_no]=_sklearn_prediction.Deployment(d["model_path"])
+    yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
+    
+    return {"status":200}
+                
+                                 
+
 
 def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
+    ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
+    for i in ALL_DEPLOYED_MODELS:
+        deployed=_sklearn_prediction.Deployment(i["model_path"])
+        PREDICTORS[i['model_deployment_number']]=deployed
     if host==None and port==None:
         app.run(debug=debug)
     elif host==None:

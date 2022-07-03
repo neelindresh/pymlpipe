@@ -79,6 +79,19 @@ class PyMLPipe:
         self.info["model"]={}
         self.info["artifact_schema"]=[]
         
+        
+    def __reset__(self):
+        self.feature_store=create_folder(os.getcwd())
+        self.folders=None
+        self.experiment_path=None
+        
+        self.info["tags"]=[]
+        self.info["metrics"]={}
+        self.info["params"]={}
+        self.info["artifact"]=[]
+        self.info["model"]={}
+        self.info["artifact_schema"]=[]
+        
     @contextmanager
     def run(self,experiment_name=None,runid=None):
         """_summary_: start a context manager for with statement
@@ -118,6 +131,7 @@ class PyMLPipe:
                                 }
         #print(self.info)
         self.context_manager.write_to_yaml(self.info)
+        self.__reset__()
         
     
     def set_experiment(self,name):
@@ -203,7 +217,7 @@ class PyMLPipe:
         """
            
         if isinstance(metric_dict,dict): 
-            self.info["metrics"].update(metric_dict)
+            self.info["metrics"].update({i:float("{0:.2f}".format(j)) for i,j in metric_dict.item()})
         else:
             raise TypeError("unsupported type, Expected 'dict' got "+str(type(metric_dict)))
         
@@ -225,7 +239,9 @@ class PyMLPipe:
             raise TypeError("unsupported type, 'metric_value' Expected 'int','float' got "+str(type(metric_value)))
         if not isinstance(metric_name,str): 
             raise TypeError("unsupported type, 'metric_value' Expected 'str' got "+str(type(metric_name)))
-        self.info["metrics"][metric_name]=metric_value
+        
+        
+        self.info["metrics"][metric_name]=float("{0:.2f}".format(metric_value))
        
         
     def log_params(self,param_dict:dict):
