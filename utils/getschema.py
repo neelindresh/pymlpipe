@@ -12,14 +12,14 @@ def schema_(data):
     details=[]
     for col in data:
         schema[col]={
-            'min':round(data[col].min(),2),
-            'max':round(data[col].max(),2),
-            'std':round(data[col].std(),2),
-            "variance":round(data[col].var(),2),
-            "mean":round(data[col].mean(),2),
-            "median":round(data[col].median(),2),
+            'min':flaot(round(data[col].min(),2)),
+            'max':flaot(round(data[col].max(),2)),
+            'std':flaot(round(data[col].std(),2)),
+            "variance":flaot(round(data[col].var(),2)),
+            "mean":flaot(round(data[col].mean(),2)),
+            "median":flaot(round(data[col].median(),2)),
             "data type":str(data[col].dtype),
-            "unique_values":len(data[col].unique()),
+            "unique_values":int(len(data[col].unique())),
             "25th percentile":str(round(data[col].quantile(0.25),2)),
             "50% percentile":str(round(data[col].quantile(0.5),2)),
             "75% percentile":str(round(data[col].quantile(0.75),2)),
