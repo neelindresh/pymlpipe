@@ -51,7 +51,7 @@
           {%for details in ALL_DEPLOYED_MODELS%}
           <tr>
             <td>{{details["experiment_id"]}}</td>
-            <td>{{details["run_id"]}}</td>
+            <td><a href="/run/{{details['experiment_id']}}@{{details['run_id']}}/">{{details["run_id"]}}</a></td>
             <td>{{details["model_deployment_number"]}}</td>
             
             <td>
