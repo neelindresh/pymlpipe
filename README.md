@@ -2,12 +2,13 @@
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/main/static/logo.svg?raw=true)
 # PyMLpipe
 
-PyMLpipe is a Python library for ease Machine Learning Model monitering and Deployment.
+PyMLpipe is a Python library for ease Machine Learning Model monitoring and Deployment.
 
 * Simple
 * Intuative
 * Easy to use
 
+Please Find the Full [documentation](https://neelindresh.github.io/pymlpipe.documentation.io/) here!
 
 ## Installation
 

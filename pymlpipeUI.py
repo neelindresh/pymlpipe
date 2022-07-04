@@ -69,7 +69,8 @@ def runpage(run_id):
                                  metrics_details=run_details["metrics"],
                                  model_details=run_details["model"],
                                  param_details=run_details["params"],
-                                 schema_details=run_details["artifact_schema"]
+                                 schema_details=run_details["artifact_schema"],
+                                 is_deployed=True if "model_path" in run_details["model"] else False
                                  )
 @app.route("/download_artifact/<uid>")
 def download_artifact(uid):
@@ -91,21 +92,22 @@ def deployments(run_id):
     run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,runid,'info.yaml'))
     deployed=_sklearn_prediction.Deployment(run_details["model"]["model_path"])
     run_hash= str(abs(hash(run_id)))
-    
-    PREDICTORS[run_hash]=deployed
-    ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
-    ALL_DEPLOYED_MODELS.append(
-        {
-            "run_id":runid,
-            "experiment_id":experiments,
-            "model_path":run_details["model"]["model_path"],
-            "model_deployment_number": run_hash,
-            "model_url":"/predict/"+run_hash,
-            "status":'running'
-        }    
-    )
-    yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
+    if run_hash not in PREDICTORS:
+        PREDICTORS[run_hash]=deployed
+        ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
+        ALL_DEPLOYED_MODELS.append(
+            {
+                "run_id":runid,
+                "experiment_id":experiments,
+                "model_path":run_details["model"]["model_path"],
+                "model_deployment_number": run_hash,
+                "model_url":"/predict/"+run_hash,
+                "status":'running'
+            }    
+        )
+        yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
     return flask.redirect(flask.url_for("show_deployments"))
+
 @app.route("/show_deployments/")
 def show_deployments():
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
@@ -151,7 +153,6 @@ def stop_deployment(deployment_no):
         if d['model_deployment_number']==deployment_no:
             print("here here")
             ALL_DEPLOYED_MODELS[idx]['status']="stopped"
-    print(ALL_DEPLOYED_MODELS)
     yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
     PREDICTORS={i:j for i,j in PREDICTORS.items() if i!=deployment_no}
     return {"status":200}

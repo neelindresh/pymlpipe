@@ -55,7 +55,11 @@
             </ul>
         </nav>
         <div style="display:flex;flex-direction:row-reverse">
+            {%if is_deployed%}
             <a class="button is-primary" href="/deployments/{{experiments}}@{{run_id}}">Deploy</a>
+            {%else%}
+            <a class="button is-primary" href="#" disabled>Deploy</a>
+            {%endif%}
         </div>
     </section>
     <section class="section">
