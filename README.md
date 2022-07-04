@@ -59,8 +59,8 @@ with mlp.run():
     mlp.log_matric("F1", f1_score(testy,predictions,average='macro'))
 
     # Save train data and test data
-    mlp.register_artifact("train.csv", trainx)
-    mlp.register_artifact("test.csv", testx,artifact_type="testing")
+    mlp.register_artifact("train", trainx)
+    mlp.register_artifact("test", testx,artifact_type="testing")
     # Save the model
     mlp.scikit_learn.register_model("logistic regression", model)
 
@@ -80,6 +80,31 @@ from pymlpipe.pymlpipeUI import start_ui
 
 start_ui(host='0.0.0.0', port=8085)
 ```
+#### Sample UI
+
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.42.35%20PM.png?raw=true)
+
+---
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.42.52%20PM.png?raw=true)
+
+---
+#### One Click Deployment
+
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.43.03%20PM.png?raw=true)
+
+---
+
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.43.52%20PM.png?raw=true)
+
+---
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.44.05%20PM.png?raw=true)
+
+---
 
 
 ## Contributing
