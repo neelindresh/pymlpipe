@@ -59,8 +59,8 @@ with mlp.run():
     mlp.log_matric("F1", f1_score(testy,predictions,average='macro'))
 
     # Save train data and test data
-    mlp.register_artifact("train", trainx)
-    mlp.register_artifact("test", testx,artifact_type="testing")
+    mlp.register_artifact("train.csv", trainx)
+    mlp.register_artifact("test.csv", testx,artifact_type="testing")
     # Save the model
     mlp.scikit_learn.register_model("logistic regression", model)
 
