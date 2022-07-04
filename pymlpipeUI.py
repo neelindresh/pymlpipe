@@ -5,7 +5,7 @@ from pymlpipe.utils import _sklearn_prediction
 from flask_api import FlaskAPI
 import numpy as np
 import json
-
+import uuid
 #app=flask.Flask(__name__)
 
 app = FlaskAPI(__name__)
@@ -44,6 +44,12 @@ def index():
                                  )
 @app.route("/run/<run_id>/")
 def runpage(run_id):
+    deploy_status=True
+    if "status" in flask.request.args:
+        
+        if flask.request.args["status"]=="501":
+            deploy_status=False
+    
     experiments,run_id=run_id.split("@")
     experiment_lists=yamlio.read_yaml(os.path.join(MODEL_DIR,EXPERIMENT_FILE))
     run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
@@ -70,7 +76,8 @@ def runpage(run_id):
                                  model_details=run_details["model"],
                                  param_details=run_details["params"],
                                  schema_details=run_details["artifact_schema"],
-                                 is_deployed=True if "model_path" in run_details["model"] else False
+                                 is_deployed=True if "model_path" in run_details["model"] else False,
+                                 deploy_status=deploy_status
                                  )
 @app.route("/download_artifact/<uid>")
 def download_artifact(uid):
@@ -88,10 +95,12 @@ def download_model(uid):
     
 @app.route("/deployments/<run_id>/")
 def deployments(run_id):
+    
     experiments,runid=run_id.split("@")
     run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,runid,'info.yaml'))
     deployed=_sklearn_prediction.Deployment(run_details["model"]["model_path"])
-    run_hash= str(abs(hash(run_id)))
+    print(uuid.NAMESPACE_DNS)
+    run_hash= str(uuid.uuid3(uuid.NAMESPACE_DNS, run_id)).replace("-", "")[:16]
     if run_hash not in PREDICTORS:
         PREDICTORS[run_hash]=deployed
         ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
@@ -106,7 +115,8 @@ def deployments(run_id):
             }    
         )
         yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
-    return flask.redirect(flask.url_for("show_deployments"))
+        return flask.redirect(flask.url_for("show_deployments"))
+    return flask.redirect("/run/"+run_id+"?status=501")
 
 @app.route("/show_deployments/")
 def show_deployments():

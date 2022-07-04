@@ -54,6 +54,12 @@
                 <li class="is-active"><a href="#" aria-current="page">{{run_id}}</a></li>
             </ul>
         </nav>
+        {%if deploy_status==False%}
+        <div class="notification is-danger">
+          <button class="delete"></button>
+          Instance of the same model is already Deployed!!!!
+        </div>
+        {%endif%}
         <div style="display:flex;flex-direction:row-reverse">
             {%if is_deployed%}
             <a class="button is-primary" href="/deployments/{{experiments}}@{{run_id}}">Deploy</a>
