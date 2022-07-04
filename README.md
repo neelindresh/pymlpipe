@@ -1,6 +1,6 @@
 # PyMLpipe
 
-PyMLpipe is a Python library for MlOps at ease.
+PyMLpipe is a Python library for ease Machine Learning Model monitering and Deployment.
 
 * Simple
 * Intuative
@@ -65,6 +65,22 @@ with mlp.run():
     mlp.scikit_learn.register_model("logistic regression", model)
 
 ```
+
+## Usage UI
+
+To start the UI 
+
+```bash
+pymlpipeui 
+```
+or 
+```python
+from pymlpipe.pymlpipeUI import start_ui
+
+
+start_ui(host='0.0.0.0', port=8085)
+```
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
