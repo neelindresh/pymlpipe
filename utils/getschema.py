@@ -20,9 +20,9 @@ def schema_(data):
             "median":float("{0:.4f}".format(data[col].median())),
             "data type":str(data[col].dtype),
             "unique_values":int(len(data[col].unique())),
-            "25th percentile":float("{0:.4f}".data[col].quantile(0.25)),
-            "50% percentile":float("{0:.4f}".data[col].quantile(0.5)),
-            "75% percentile":float("{0:.4f}".data[col].quantile(0.75)),
+            "25th percentile":float("{0:.4f}".format(data[col].quantile(0.25))),
+            "50% percentile":float("{0:.4f}".format(data[col].quantile(0.5))),
+            "75% percentile":float("{0:.4f}".format(data[col].quantile(0.75))),
         }
         if len(details)==0:
             details=list(schema[col].keys())
