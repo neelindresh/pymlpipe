@@ -18,21 +18,77 @@ EXPERIMENT_FILE="experiment.yaml"
 DEPLOYMENT_FILE="deployment.yaml"
 #ALL_DEPLOYED_MODELS=[]
 PREDICTORS={}
+app.secret_key="PYMLPIPE_SEC_KEY"
+
 
 @app.route("/")
 def index():
+    '''
+    if "status" in flask.request.args:
+        
+        if flask.request.args["status"]=="501":
+            deploy_status=False
+            
+    '''       
+    metric_filters={}
+    tag_filters=[]
+    if len(flask.request.args):
+        if "metrics" in flask.request.args:
+            metric_filters[flask.request.args['metrics']]=flask.request.args["metricsfilter"]
+        elif "tags" in flask.request.args:
+            tag_filters=flask.request.args["tags"].split(",")
+    
     experiment_lists=yamlio.read_yaml(os.path.join(MODEL_DIR,EXPERIMENT_FILE))
+    if len(experiment_lists)==0:
+        return flask.render_template("index.html",
+                                    runs=[],
+                                    run_details={},
+                                    metrics=[],
+                                    current_experiment=None
+                                     )
     info={}
     metrics=[]
+    exp_wise_metrics={}
+    tags=[]
+    error=""
     for experiment,run_data in experiment_lists.items():
         for run_id in run_data["runs"]:
             print(run_data['experiment_path'],run_id,"info.yaml")
             run_folder=os.path.join(run_data['experiment_path'],run_id,"info.yaml")
             run_details=yamlio.read_yaml(run_folder)
             info[run_id]=run_details
+            if 'tags' in run_details:
+                tags.extend(run_details["tags"])
             if "metrics" in run_details:
                 metrics.extend(list(run_details["metrics"].keys()))
+                exp_wise_metrics[experiment]=list(run_details["metrics"].keys())
+                
+    #filter emmpty runs:            
+    info={run:info[run] for run in info if len(info[run])>0}
+    
+    
+    if len(metric_filters)>0:
+        newinfo={}
+        for run_id,details in info.items():
             
+            for mfilter in metric_filters:
+                if mfilter in details["metrics"]:
+                    fv=details["metrics"][mfilter]
+                    try:
+                        if eval(str(fv)+metric_filters[mfilter]):
+                            newinfo[run_id]=details
+                    except Exception as e:
+                        error=e
+                else:
+                    newinfo[run_id]=details
+        info=newinfo
+    elif len(tag_filters)>0:
+        newinfo={}
+        for run_id,details in info.items():
+            if len(set(tag_filters).intersection(set(details["tags"])))>0:
+                newinfo[run_id]=details
+        info=newinfo
+    
     exp_names=list(experiment_lists.keys())
     
     
@@ -40,7 +96,10 @@ def index():
                                  runs=experiment_lists,
                                  run_details=info,
                                  metrics=list(set(metrics)),
-                                 current_experiment=exp_names
+                                 current_experiment=exp_names,
+                                 tags=list(set(tags)),
+                                 exp_wise_metrics=exp_wise_metrics,
+                                 error=error
                                  )
 @app.route("/run/<run_id>/")
 def runpage(run_id):

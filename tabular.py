@@ -154,8 +154,8 @@ class PyMLPipe:
         """
         
             
-        if isinstance(tag_dtag_valueict,dict) or isinstance(tag_dtag_valueict,list) or isinstance(tag_dtag_valueict,set): 
-           raise TypeError("unsupported type, Expected 'str','int','float' got "+str(type(tag_dict)))
+        if isinstance(tag_value,dict) or isinstance(tag_value,list) or isinstance(tag_value,set): 
+           raise TypeError("unsupported type, Expected 'str','int','float' got "+str(type(tag_value)))
         self.info["tags"].append(tag_value)
         
     
@@ -217,12 +217,12 @@ class PyMLPipe:
         """
            
         if isinstance(metric_dict,dict): 
-            self.info["metrics"].update({i:float("{0:.2f}".format(j)) for i,j in metric_dict.item()})
+            self.info["metrics"].update({i:float("{0:.2f}".format(j)) for i,j in metric_dict.items()})
         else:
             raise TypeError("unsupported type, Expected 'dict' got "+str(type(metric_dict)))
         
         
-    def log_matric(self,metric_name,metric_value):
+    def log_metric(self,metric_name,metric_value):
         """_summary_: log single metric for the model run
 
         Args:
