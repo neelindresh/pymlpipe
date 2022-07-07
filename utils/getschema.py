@@ -12,17 +12,17 @@ def schema_(data):
     details=[]
     for col in data:
         schema[col]={
-            'min':float(round(data[col].min(),2)),
-            'max':float(round(data[col].max(),2)),
-            'std':float(round(data[col].std(),2)),
-            "variance":float(round(data[col].var(),2)),
-            "mean":float(round(data[col].mean(),2)),
-            "median":float(round(data[col].median(),2)),
+            'min':float(data[col].min()),
+            'max':float(data[col].max()),
+            'std':float(data[col].std()),
+            "variance":float(data[col].var()),
+            "mean":float(data[col].mean()),
+            "median":float(data[col].median()),
             "data type":str(data[col].dtype),
             "unique_values":int(len(data[col].unique())),
-            "25th percentile":str(round(data[col].quantile(0.25),2)),
-            "50% percentile":str(round(data[col].quantile(0.5),2)),
-            "75% percentile":str(round(data[col].quantile(0.75),2)),
+            "25th percentile":str(data[col].quantile(0.25)),
+            "50% percentile":str(data[col].quantile(0.5)),
+            "75% percentile":str(data[col].quantile(0.75)),
         }
         if len(details)==0:
             details=list(schema[col].keys())
