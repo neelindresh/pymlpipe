@@ -167,14 +167,14 @@
     function filtertags(){
         tags=document.getElementsByName('tagCheckboxs')
         all_tags=[]
-        if (all_tags.length>0){
-            for(var i=0;i<tags.length;i++){
-                if (tags[i].checked){
-                    all_tags.push(tags[i].value)
-                   
-                }
+        
+        for(var i=0;i<tags.length;i++){
+            if (tags[i].checked){
+                all_tags.push(tags[i].value)
+                
             }
-    
+        }
+        if (all_tags.length>0){
             window.open("/?tags="+all_tags,"_self")
         }
 
