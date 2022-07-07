@@ -78,16 +78,16 @@ mlp.set_tags(["Classification","test run","logisticRegression"])
 *  Set Metrics values `[Optional]` by using `log_matric(metric_name,metric_value)`-Default there is no metrics
 This will help in comparing performance of different models and model versions
 ```python
-mlp.log_matric("Accuracy", accuracy_score(testy,predictions))
+mlp.log_metric("Accuracy", accuracy_score(testy,predictions))
 
 
-mlp.log_matric("Accuracy", .92)
+mlp.log_metric("Accuracy", .92)
 
 ```
 
 *  Set multiple Metrics values `[Optional]` by using `log_matrics({metric_name:metric_value})`-Default there is no metrics
 ```python
-mlp.log_matrics(
+mlp.log_metrics(
     {
         "Accuracy": accuracy_score(testy,predictions),
         "Precision": precision_score(testy,predictions,average='macro'),
@@ -96,7 +96,7 @@ mlp.log_matrics(
 )
 
 
-mlp.log_matrics(
+mlp.log_metrics(
     {
         "Accuracy": .92,
         "Precision": .87,
@@ -162,10 +162,10 @@ with mlp.run():
     model.fit(trainx, trainy)
     predictions=model.predict(testx)
     # log performace metrics
-    mlp.log_matric("Accuracy", accuracy_score(testy,predictions))
-    mlp.log_matric("Precision", precision_score(testy,predictions,average='macro'))
-    mlp.log_matric("Recall", recall_score(testy,predictions,average='macro'))
-    mlp.log_matric("F1", f1_score(testy,predictions,average='macro'))
+    mlp.log_metric("Accuracy", accuracy_score(testy,predictions))
+    mlp.log_metric("Precision", precision_score(testy,predictions,average='macro'))
+    mlp.log_metric("Recall", recall_score(testy,predictions,average='macro'))
+    mlp.log_metric("F1", f1_score(testy,predictions,average='macro'))
 
     # Save train data and test data
     mlp.register_artifact("train", trainx)
