@@ -53,15 +53,15 @@ def makegraph(ops,architecture):
         arch_details=search_arch(architecture, ops[op]['name'])
         if arch_details!=None:
             graph_dict["nodes"].append({'data':{ 'id': ops[op]['name'] ,
-                                            "label":op,
+                                            "label":op+"_"+ops[op]['name']  ,
                                             "type":arch_details["layer_type"] ,
                                             "details":[k+"="+str(v) for k,v in arch_details["params"].items()]
                                             } })
         else:
             graph_dict["nodes"].append({'data':{ 'id': ops[op]['name'] ,
-                                            "label":op,
+                                            "label":op+"_"+ops[op]['name'],
                                             "type": ops[op]['name'],
-                                            "details":[ops[op]['op']]
+                                            "details":[ops[op]['op']]   
                                             } })
         if ops[op]['next']!="":
             graph_dict["edges"].append({ 'data': { 'id': op, 'source': ops[op]['name'], 'target': ops[op]['next']} })
