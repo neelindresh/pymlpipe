@@ -2,6 +2,8 @@ import flask
 import os
 from pymlpipe.utils import yamlio
 from pymlpipe.utils import _sklearn_prediction
+from pymlpipe.utils import change2graph
+
 from flask_api import FlaskAPI
 import numpy as np
 import json
@@ -112,6 +114,10 @@ def runpage(run_id):
     experiments,run_id=run_id.split("@")
     experiment_lists=yamlio.read_yaml(os.path.join(MODEL_DIR,EXPERIMENT_FILE))
     run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
+    
+    model_type=""
+    metrics_log={}
+    graph_dict={}
     expertiment_details={
         "RUN_ID":run_id,
         "EXPERIMENT NAME":experiments,
@@ -126,6 +132,19 @@ def runpage(run_id):
     else:
         expertiment_details["VERSION"]="-"
     
+    if "metrics_log" in run_details and len(run_details["metrics_log"])>0:
+        metrics_log["data"]=run_details["metrics_log"]
+        metrics_log["cols"]=list(run_details["metrics_log"][0].keys())
+        
+    
+    
+    if "model" in run_details and "model_type" in run_details["model"]:
+        model_type=run_details["model"]["model_type"]
+    #print(run_details["model"]["model_ops"])
+    
+    if "model_ops" in run_details["model"]:
+        graph_dict=change2graph.makegraph(run_details["model"]["model_ops"],run_details["model"]["model_architecture"])
+    
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
@@ -136,7 +155,10 @@ def runpage(run_id):
                                  param_details=run_details["params"],
                                  schema_details=run_details["artifact_schema"],
                                  is_deployed=True if "model_path" in run_details["model"] else False,
-                                 deploy_status=deploy_status
+                                 deploy_status=deploy_status,
+                                 metrics_log=metrics_log,
+                                 model_type=model_type,
+                                 graph_dict=graph_dict
                                  )
 @app.route("/download_artifact/<uid>")
 def download_artifact(uid):
