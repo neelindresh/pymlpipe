@@ -1,7 +1,7 @@
 import flask
 import os
 from pymlpipe.utils import yamlio
-from pymlpipe.utils import _sklearn_prediction
+from pymlpipe.utils import uiutils
 from pymlpipe.utils import change2graph
 
 from flask_api import FlaskAPI
@@ -117,6 +117,7 @@ def runpage(run_id):
     
     model_type=""
     metrics_log={}
+    metrics_log_plot={}
     graph_dict={}
     expertiment_details={
         "RUN_ID":run_id,
@@ -135,7 +136,16 @@ def runpage(run_id):
     if "metrics_log" in run_details and len(run_details["metrics_log"])>0:
         metrics_log["data"]=run_details["metrics_log"]
         metrics_log["cols"]=list(run_details["metrics_log"][0].keys())
+        last_key=None
+        for m in metrics_log["data"]:
+            for k,v in m.items():
+                if k in metrics_log_plot:
+                    metrics_log_plot[k].append(v)
+                else:
+                    metrics_log_plot[k]=[v]
+                last_key=k
         
+        metrics_log_plot["range"]=list(range(len(metrics_log_plot[last_key])))
     
     
     if "model" in run_details and "model_type" in run_details["model"]:
@@ -157,6 +167,7 @@ def runpage(run_id):
                                  is_deployed=True if "model_path" in run_details["model"] else False,
                                  deploy_status=deploy_status,
                                  metrics_log=metrics_log,
+                                 metrics_log_plot=metrics_log_plot,
                                  model_type=model_type,
                                  graph_dict=graph_dict
                                  )
@@ -171,6 +182,8 @@ def download_model(uid):
     experiments,run_id,filename,model_type=uid.split("@")
     if model_type=="scikit-learn":
         filename=filename+".pkl"
+    elif model_type=="torch":
+        filename=filename+".pt"
     #run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,run_id,'info.yaml'))
     return flask.send_from_directory(os.path.join(MODEL_DIR,experiments,run_id,"models"), filename,as_attachment=True)
     
@@ -179,8 +192,9 @@ def deployments(run_id):
     
     experiments,runid=run_id.split("@")
     run_details=yamlio.read_yaml(os.path.join(MODEL_DIR,experiments,runid,'info.yaml'))
-    deployed=_sklearn_prediction.Deployment(run_details["model"]["model_path"])
-    print(uuid.NAMESPACE_DNS)
+    deployed=uiutils.deployment_handler(run_details["model"]["model_path"],
+                               run_details["model"]["model_type"],
+                               run_details["model"]["model_mode"]) 
     run_hash= str(uuid.uuid3(uuid.NAMESPACE_DNS, run_id)).replace("-", "")[:16]
     if run_hash not in PREDICTORS:
         PREDICTORS[run_hash]=deployed
@@ -190,9 +204,11 @@ def deployments(run_id):
                 "run_id":runid,
                 "experiment_id":experiments,
                 "model_path":run_details["model"]["model_path"],
+                "model_type":run_details["model"]["model_type"],
                 "model_deployment_number": run_hash,
                 "model_url":"/predict/"+run_hash,
-                "status":'running'
+                "status":'running',
+                "model_mode": run_details["model"]["model_mode"]
             }    
         )
         yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
@@ -209,32 +225,66 @@ def show_deployments():
     
 @app.route("/predict/<hashno>",methods=["GET","POST"])
 def predict(hashno):
-    print(PREDICTORS)
+   
+    ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
+    info_dict={}
+    for model in ALL_DEPLOYED_MODELS:
+        if model["model_deployment_number"]==hashno and model["status"]=="running":
+            del model['model_path']
+            info_dict=model
+            break
+    
+    if len(info_dict)==0 or hashno not in PREDICTORS:
+        return {"info":{
+            "error":404,
+            "msg":"No such endpoint present"
+        }
+    }
     if flask.request.method=="POST":
         #data=flask.request.form['random_data']
         data=flask.request.data
-        predictions=PREDICTORS[hashno].predict(np.array(data['data']))
-        
+        dtype=None
+        if "dtype" in data:
+            dtype=data["dtype"]
+        predictions,status=PREDICTORS[hashno].predict(np.array(data['data']),dtype)
+        if status==1:
+            return {
+                "deployment no":hashno,
+                "error": predictions
+            }
         return {
             "deployment no":hashno,
-            "predictions":[int(p) for p in predictions]
+            "predictions":[float(p) for p in predictions]
         }
     return {
-        "data":[
-            [
-                5.6,
-                3.0,
-                4.5,
-                1.5
-            ],
-            [
-                5.6,
-                3.0,
-                4.5,
-                1.5
-            ]
-        ]
-    }
+            "info":info_dict,
+            "request_body":{
+                    "data": [
+                    [ 42.0,
+                    120.0,   
+                    1.0,   
+                    0.0,   
+                    0.0,   
+                    0.0, 
+                    185.7, 
+                    133.0,
+                    31.57,
+                    235.1,
+                    149.0,
+                    19.98,
+                    256.4,
+                    78.0,
+                    11.54,
+                    16.9,
+                    6.0,
+                    4.56,
+                    0.0  
+                    ]
+                ],
+                "dtype": "float"
+            }
+            
+        }
 @app.route("/deployment/stop/<deployment_no>",methods=["GET"])                
 def stop_deployment(deployment_no):
     global PREDICTORS
@@ -258,7 +308,9 @@ def start_deployment(deployment_no):
         if d['model_deployment_number']==deployment_no:
             
             ALL_DEPLOYED_MODELS[idx]['status']="running"
-            PREDICTORS[deployment_no]=_sklearn_prediction.Deployment(d["model_path"])
+            model_type=ALL_DEPLOYED_MODELS[idx]["model_type"]
+            
+            PREDICTORS[deployment_no]=uiutils.deployment_handler(d["model_path"], model_type, d["model_mode"])
     yamlio.write_to_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE),ALL_DEPLOYED_MODELS)
     
     return {"status":200}
@@ -270,7 +322,9 @@ def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
     for i in ALL_DEPLOYED_MODELS:
-        deployed=_sklearn_prediction.Deployment(i["model_path"])
+        model_type=i["model_type"]
+        
+        deployed=uiutils.deployment_handler(i["model_path"], model_type, i["model_mode"])
         PREDICTORS[i['model_deployment_number']]=deployed
     if host==None and port==None:
         app.run(debug=debug)

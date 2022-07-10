@@ -141,7 +141,8 @@ class PyMLPipe:
                                 "model_class":self.scikit_learn.model_class,
                                 "model_type":self.scikit_learn.model_type,
                                 "model_tags":self.scikit_learn.model_tags,
-                                "registered":self.scikit_learn.registered
+                                "registered":self.scikit_learn.registered,
+                                "model_mode":self.scikit_learn.model_mode
                                 }
             
         elif self.pytorch.registered:
@@ -151,7 +152,8 @@ class PyMLPipe:
                                 "model_class":self.pytorch.model_class,
                                 "model_type":self.pytorch.model_type,
                                 "model_ops":self.pytorch.model_ops,
-                                "registered":self.pytorch.registered
+                                "registered":self.pytorch.registered,
+                                "model_mode":self.pytorch.model_mode
                                 }
         #print(self.info)
         if len(self.info["metrics"])==0 and self._is_continious_logging:
@@ -487,6 +489,7 @@ class ScikitLearn:
         self.model_params={}
         self.model_tags={}
         self.registered=False
+        self.model_mode=""
         
         
     def register_model(self,model_name,model):
@@ -514,6 +517,7 @@ class Pytorch:
         self.model_architecture=[]
         self.model_ops=[]
         self.registered=False
+        self.model_mode=""
         
     def register_model(self,model_name,model):
         """_summary_: Save the model as an aritifact object
@@ -537,6 +541,7 @@ class Pytorch:
         self.registered=True
         self.model_architecture=self._get_model_arch(model)
         self.model_ops=self._get_model_ops(model)
+        self.model_mode="non_runtime"
 
     def register_model_with_runtime(self,model_name,model,data):
         """_summary_: Save the model as an aritifact object with runtime details.
@@ -555,6 +560,13 @@ class Pytorch:
             torch.jit.save(traced_cell, os.path.join(self.folders["models"],model_name+".pt"))
         except Exception as e:
             raise Exception(e)
+        self.model_name=model_name
+        self.model_path=os.path.join(self.folders["models"],model_name+'.pt')
+        self.model_class=type(model).__name__
+        self.registered=True
+        self.model_architecture=self._get_model_arch(model)
+        self.model_ops=self._get_model_ops(model)
+        self.model_mode="runtime"
         
     def _load_model(self,model_name):
         model = torch.jit.load(model_name)
@@ -600,7 +612,7 @@ class Pytorch:
         for layers,details in dict(model.named_modules()).items():
             _temp={}
             if layers!="":
-                _temp["layer_name"]=layers
+                _temp["layer_name"]=layers.replace(".","_")
                 _temp["layer"]=str(details)
                 _temp["layer_type"]=type(details).__name__
                 _temp["layer_class"]=str(type(details)).strip("<").strip(">").split(" ")[1]
