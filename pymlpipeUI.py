@@ -54,6 +54,7 @@ def index():
     tags=[]
     error=""
     for experiment,run_data in experiment_lists.items():
+        exp_wise_metrics[experiment]=[]
         for run_id in run_data["runs"]:
             print(run_data['experiment_path'],run_id,"info.yaml")
             run_folder=os.path.join(run_data['experiment_path'],run_id,"info.yaml")
@@ -63,7 +64,8 @@ def index():
                 tags.extend(run_details["tags"])
             if "metrics" in run_details:
                 metrics.extend(list(run_details["metrics"].keys()))
-                exp_wise_metrics[experiment]=list(run_details["metrics"].keys())
+                mm=[i for i in list(run_details["metrics"].keys()) if i not in exp_wise_metrics[experiment]]
+                exp_wise_metrics[experiment].extend(mm)
                 
     #filter emmpty runs:            
     info={run:info[run] for run in info if len(info[run])>0}
