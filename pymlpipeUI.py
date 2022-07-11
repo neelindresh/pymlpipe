@@ -230,10 +230,12 @@ def predict(hashno):
    
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
     info_dict={}
+    model_type=None
     for model in ALL_DEPLOYED_MODELS:
         if model["model_deployment_number"]==hashno and model["status"]=="running":
             del model['model_path']
             info_dict=model
+            model_type=model["model_type"]
             break
     
     if len(info_dict)==0 or hashno not in PREDICTORS:
@@ -258,7 +260,27 @@ def predict(hashno):
             "deployment no":hashno,
             "predictions":[float(p) for p in predictions]
         }
-    return {
+    if model_type=="scikit-learn":
+        return {
+            "info":info_dict,
+            "request_body":{
+                "data":[
+                    [
+                        5.6,
+                        3.0,
+                        4.5,
+                        1.5
+                    ],
+                    [
+                        5.6,
+                        3.0,
+                        4.5,
+                        1.5
+                    ]
+                ]
+            }}
+    else:
+        return {
             "info":info_dict,
             "request_body":{
                     "data": [
