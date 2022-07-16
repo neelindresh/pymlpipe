@@ -10,8 +10,19 @@ import shutil
 import pickle
 import sklearn
 import datetime
-    
-    
+import torch
+import torch.fx
+
+
+_COLOR_MAP = {
+    "placeholder": "AliceBlue",
+    "call_module": "LemonChiffon1",
+    "get_param": "Yellow2",
+    "get_attr": "LightGrey",
+    "output": "PowderBlue",
+}
+
+
 class Context_Manager:
         """_summary_: Context Manager for with statement
         1. creates folders and subfolders
@@ -78,6 +89,8 @@ class PyMLPipe:
         self.info["artifact"]=[]
         self.info["model"]={}
         self.info["artifact_schema"]=[]
+        self.info["metrics_log"]=[]
+        self._is_continious_logging=False
         
         
     def __reset__(self):
@@ -91,6 +104,7 @@ class PyMLPipe:
         self.info["artifact"]=[]
         self.info["model"]={}
         self.info["artifact_schema"]=[]
+        self.info["metrics_log"]=[]
         
     @contextmanager
     def run(self,experiment_name=None,runid=None):
@@ -117,7 +131,7 @@ class PyMLPipe:
         self.context_manager=r
         #initialize models 
         self.scikit_learn=ScikitLearn(self.context_manager.folders)
-        #self.pytorch=Pytorch(self.context_manager.folders)
+        self.pytorch=Pytorch(self.context_manager.folders)
         yield r
         self.info["execution_time"]=str(datetime.datetime.now()).split(".")[0]
         if self.scikit_learn.registered:
@@ -127,9 +141,24 @@ class PyMLPipe:
                                 "model_class":self.scikit_learn.model_class,
                                 "model_type":self.scikit_learn.model_type,
                                 "model_tags":self.scikit_learn.model_tags,
-                                "registered":self.scikit_learn.registered
+                                "registered":self.scikit_learn.registered,
+                                "model_mode":self.scikit_learn.model_mode
+                                }
+            
+        elif self.pytorch.registered:
+            self.info["model"]={"model_name":self.pytorch.model_name,
+                                "model_path":self.pytorch.model_path,
+                                "model_architecture":self.pytorch.model_architecture,
+                                "model_class":self.pytorch.model_class,
+                                "model_type":self.pytorch.model_type,
+                                "model_ops":self.pytorch.model_ops,
+                                "registered":self.pytorch.registered,
+                                "model_mode":self.pytorch.model_mode
                                 }
         #print(self.info)
+        if len(self.info["metrics"])==0 and self._is_continious_logging:
+            self.info["metrics"]=self.info["metrics_log"][-1]
+            
         self.context_manager.write_to_yaml(self.info)
         self.__reset__()
         
@@ -220,7 +249,21 @@ class PyMLPipe:
             self.info["metrics"].update({i:float("{0:.2f}".format(j)) for i,j in metric_dict.items()})
         else:
             raise TypeError("unsupported type, Expected 'dict' got "+str(type(metric_dict)))
-        
+    
+    def log_metrics_continious(self,metric_dict:dict):
+        """_summary_
+
+        Args:
+            metric_dict (dict): key value pair with metric name and metric value
+
+        Raises:
+            TypeError: Expected 'dict'
+        """
+        if isinstance(metric_dict,dict):
+            self.info["metrics_log"].append({i:float("{0:.2f}".format(j)) for i,j in metric_dict.items()})
+        else:
+            raise TypeError("Expected Type dict got " +type(metric_dict))
+        self._is_continious_logging=True
         
     def log_metric(self,metric_name,metric_value):
         """_summary_: log single metric for the model run
@@ -446,12 +489,14 @@ class ScikitLearn:
         self.model_params={}
         self.model_tags={}
         self.registered=False
+        self.model_mode=""
         
         
     def register_model(self,model_name,model):
         if "sklearn" in str(type(model)):
             
             pickle.dump(model, open(os.path.join(self.folders["models"],model_name+'.pkl'), 'wb'))
+            self.model_type="scikit-learn"
         else:
             raise TypeError("Error:Expected ScikitLearn Module!!!!")
         self.model_name=model_name
@@ -459,6 +504,123 @@ class ScikitLearn:
         self.model_class=type(model).__name__
         self.model_params=model.get_params()
         self.model_tags={tag:str(value) for tag,value in model._get_tags().items()}
-        self.model_type="scikit-learn"
         self.registered=True
+    
+    
+class Pytorch:
+    def __init__(self,folders):
+        self.folders=folders
+        self.model_name=""
+        self.model_path=""
+        self.model_class=""
+        self.model_type=""
+        self.model_architecture=[]
+        self.model_ops=[]
+        self.registered=False
+        self.model_mode=""
+        
+    def register_model(self,model_name,model):
+        """_summary_: Save the model as an aritifact object
+
+        Args:
+            model_name (str): name of file to be saved
+            model (Pytorch Model): the model
+
+        Raises:
+            Exception: 
+        """
+        try:
+            model_scripted = torch.jit.script(model)
+            model_scripted.save(os.path.join(self.folders["models"],model_name+'.pt'))
+            self.model_type="torch"
+        except Exception as e:
+            raise Exception(e)
+        self.model_name=model_name
+        self.model_path=os.path.join(self.folders["models"],model_name+'.pt')
+        self.model_class=type(model).__name__
+        self.registered=True
+        self.model_architecture=self._get_model_arch(model)
+        self.model_ops=self._get_model_ops(model)
+        self.model_mode="non_runtime"
+
+    def register_model_with_runtime(self,model_name,model,data):
+        """_summary_: Save the model as an aritifact object with runtime details.
+        This helps in Saving the model for model conversion
+
+        Args:
+            model_name (str): name of file to be saved
+            model (Pytorch Model): the model
+            data (TorchTensor): Data used for training. 1 row of data is enogh
+
+        Raises:
+            Exception: _description_
+        """
+        try:
+            traced_cell = torch.jit.trace(model, data)
+            torch.jit.save(traced_cell, os.path.join(self.folders["models"],model_name+".pt"))
+        except Exception as e:
+            raise Exception(e)
+        self.model_name=model_name
+        self.model_path=os.path.join(self.folders["models"],model_name+'.pt')
+        self.model_class=type(model).__name__
+        self.registered=True
+        self.model_architecture=self._get_model_arch(model)
+        self.model_ops=self._get_model_ops(model)
+        self.model_mode="runtime"
+        
+    def _load_model(self,model_name):
+        model = torch.jit.load(model_name)
+        return
+
+    def _load_model_with_runtime(self,model_name):
+        loaded_trace = torch.jit.load(model_name)
+        return loaded_trace
+    
+    def _get_model_ops(self,model):
+        """_summary_: get forward operations in for pytorch model
+
+        Args:
+            model (Pytorch Model): Pytorch model
+
+        Returns:
+            list: all tensor operations
+        """
+        gm = torch.fx.symbolic_trace(model)
+        ops_data={}
+        for idx, n in enumerate(gm.graph.nodes):
+            ops_data[f"op_{idx}"]={
+                "name":str(n),
+                "op":n.__dict__["op"],
+                "input_node":{str(k): str(v) for k,v in n.__dict__['_input_nodes'].items()},
+                "args":[str(i) for i in n.__dict__["_args"]],
+                "prev":str(n.__dict__["_prev"]),
+                "next":str(n.__dict__["_next"]),
+                "users":{str(k): str(v) for k,v in n.__dict__['users'].items()},
+            }
+        return ops_data
+    
+    def _get_model_arch(self,model):
+        """_summary_: get forward operations in for pytorch model
+
+        Args:
+            model (Pytorch Model): Pytorch model
+
+        Returns:
+            list: all Layers in model
+        """
+        arch=[]
+        for layers,details in dict(model.named_modules()).items():
+            _temp={}
+            if layers!="":
+                _temp["layer_name"]=layers.replace(".","_")
+                _temp["layer"]=str(details)
+                _temp["layer_type"]=type(details).__name__
+                _temp["layer_class"]=str(type(details)).strip("<").strip(">").split(" ")[1]
+                _temp["params"]={}
+                for params in details.__dict__:
+                    if not params.startswith("_"):
+                        _temp["params"][params]=details.__dict__[params]
+            if len(_temp)>0:        
+                arch.append(_temp)
+        return arch
     
