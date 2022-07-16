@@ -403,11 +403,21 @@ with mlp.run():
 ## UI for Pytorch Models
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.03.29%20PM.png?raw=true)
 
+###### Visualize the Model details 
+
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.03.50%20PM.png?raw=true)
+
+###### Visualize the Model Architecture
+
 
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.00%20PM.png?raw=true)
 
+###### View Training Logs 
+
+
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.08%20PM.png?raw=true)
+
+###### Visualize Training Logs 
 
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.21%20PM.png?raw=true)
 
