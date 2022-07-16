@@ -7,6 +7,12 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.22.0/cytoscape.min.js"></script>
+    
+    <script src="https://unpkg.com/dagre@0.7.4/dist/dagre.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.1.0/cytoscape-dagre.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
+
   </head>
   <style>
     .center-text{
@@ -21,9 +27,17 @@
     hr{
         margin:2px;
     }
+    #cy {
+      width: 100%;
+      height: 500px;
+      display: block;
+      border: 1px solid gainsboro
+    }
+    
   </style>
   <script>
     current_table="run_details"
+    metrics_log_plot={{metrics_log_plot|safe}}
     function show_tab(id){
       if(id!=current_table){
           document.getElementById(id).style.display='block'
@@ -38,6 +52,44 @@
           //uncheck_all()
       }
       
+  }
+  plotfor=[]
+  function draw(){
+    //console.log(plotfor)
+    checkboxs=document.getElementsByName("log_metic")
+    for(var i=0;i<checkboxs.length;i++){
+      if(checkboxs[i].checked ){
+        if (! (plotfor.includes(checkboxs[i].value))){
+          plotfor.push(checkboxs[i].value)
+        }
+        
+      }
+      else{
+        
+        index = plotfor.indexOf(checkboxs[i].value);
+        //console.log(checkboxs[i].value,index)
+        if (index > -1) {
+            plotfor.splice(index, 1); // 2nd parameter means remove one item only
+          }
+      }
+    }
+    //console.log(plotfor)
+    plotling_object=[]
+    
+    for(var i=0;i<plotfor.length;i++){
+      plotling_object.push(
+        {
+          x: metrics_log_plot["range"],
+          y: metrics_log_plot[plotfor[i]],
+          type: 'scatter',
+          name: plotfor[i]
+        }
+      )
+    }
+    lineChart(plotling_object)
+    if (plotfor.length==0){
+      Plotly.purge('plot-data');
+    }
   }
   </script>
   <body>
@@ -70,6 +122,7 @@
     </section>
     <section class="section">
       <div class="columns">
+        <!-- SIDE MENU-->
         <div class="column is-one-fifth">
           <aside class="menu">
             <p class="menu-label">
@@ -85,16 +138,23 @@
             <hr>
             <li ><a href="#"  onclick="show_tab('model_details')">Models</a></li>
             <hr>
-
+            {%if model_type=="torch"%}
+            <li ><a href="#"  onclick="show_tab('model_details_arc')">Model Architecture</a></li>
+            <hr>
+            {%endif%}
             <li ><a href="#"  onclick="show_tab('schema_details')">Data Schema</a></li>
-                
+            <hr>
+            {%if metrics_log|length>0%}
+            <li ><a href="#"  onclick="show_tab('log_details')">Training Logs</a></li>
+            {%endif%}
             </ul>
             
         </aside>
         </div>
-        <!-- BREAK-->
+        <!-- SIDE MENU END-->
+        <!-- CONTENT START-->
         <div class="column">
-          <!-- BREAK-->
+          <!-- RUN DETAILS START-->
             <div id="run_details">
               <h1 class="subtitle ">Run Details </h1>
               <table class="table is-striped" style="width:100%;">
@@ -126,7 +186,8 @@
                 </tbody>
               </table>
             </div>
-            <!-- BREAK-->
+            <!-- RUN DETAILS END-->
+            <!-- ARTIFACT DETAILS START-->
             <div id="artifact_details" style="display:none">
               <h1 class="subtitle ">Artifacts </h1>
               <table class="table is-striped" style="width:100%;">
@@ -164,7 +225,8 @@
                 </tbody>
               </table>
             </div>
-            <!-- BREAK-->
+            <!-- ARTIFACT DETAILS END-->
+            <!-- METRICS DETAILS START-->
             <div id="metrics_details" style="display:none">
               <h1 class="subtitle ">Merics </h1>
               <table class="table is-striped" style="width:100%;">
@@ -187,7 +249,9 @@
                 </tbody>
               </table>
             </div>
-            <!-- BREAK-->
+            <!-- METRICS DETAILS END-->
+            {%if model_type=="scikit-learn"%}
+            <!-- MODEL DETAILS START _SKLEARN-->
             <div id="model_details" style="display:none">
               <h1 class="subtitle ">Model Details 
                 {%if model_details|length !=0%}
@@ -296,7 +360,117 @@
                 </div>
               </div>    
             </div>
-            <!-- BREAK-->
+            <!-- MODEL DETAILS END _SKLEARN-->
+            {%elif model_type=="torch"%}
+            <!-- MODEL DETAILS START _PYTORCH-->
+            <div id="model_details" style="display:none">
+              <h1 class="subtitle ">Model Details 
+                {%if model_details|length !=0%}
+                <a href="/download_model/{{experiments}}@{{run_id}}@{{model_details['model_name']}}@{{model_details['model_type']}}">
+                  <img src="{{ url_for('static', filename='download.png') }}" height="25" width="25">
+                </a>
+                {%endif%}
+              </h1>
+              <div class="columns">
+                <div class="column">
+                  {%if model_details|length !=0%}
+                  <h6 class="subtitle is-6">Model Information </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Model</th>
+                        <th>Values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td> Model Name</td>
+                        <td> {{model_details["model_name"]}}</td>
+                        
+                      <tr>
+                        <td> Model Type</td>
+                        <td>{{model_details["model_type"]}}</td>
+                        
+                      </tr>
+                      <tr>
+                        <td> Model Class</td>
+                        <td>{{model_details["model_class"]}}</td>
+                        
+                      </tr>
+                      
+                        
+                    </tbody>
+                  </table>
+                  {%endif%}
+                  
+                </div>
+                <div class="column">
+                  {%if param_details|length !=0%}
+                  <h6 class="subtitle is-6">User Defined Parmaters </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>User Param name</th>
+                        <th>User Param values</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for details in param_details%}
+                      <tr>
+                        <td> {{details}}</td>
+                        <td> {{param_details[details]}}</td>
+                        
+                      </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table>
+                  {%endif%}
+                </div>
+              </div>
+              <h6 class="subtitle is-6">Model Architecture </h6>
+                  <table class="table is-striped is-bordered" style="width:100%;">
+                    <thead>
+                      <tr>
+                        <th>Layer Name</th>
+                        <th>Layer Details</th>
+                        <th>Layer Class</th>
+                        <th>Layer Params</th>
+                        
+                      </tr>
+                      
+                    </thead>
+                    <tbody>
+                      {%for layer in model_details["model_architecture"]%}
+                        <tr>
+                          <td>{{layer["layer_name"]}}</td>
+                          <td>{{layer["layer_type"]}}</td>
+                          <td>{{layer["layer_class"]}}</td>
+                          <td>{{layer["params"]}}</td>
+                          
+                        </tr>
+                      {%endfor%}
+                    </tbody>
+                  </table> 
+                  
+            </div>
+            <div id="model_details_arc" style="display:none">
+              <div id="cy">
+
+              </div>
+            </div>
+            <!-- MODEL DETAILS END _PYTORCH-->
+            {%else%}
+            <div id="model_details" style="display:none">
+
+            </div>
+            {%endif%}
+            
+            
+            <!-- SCHEMA DETAILS START-->
             <div id="schema_details" style="display:none">
               <h1 class="subtitle ">Schema Details </h1>
               
@@ -325,8 +499,124 @@
               {%endfor%}
               
             <!-- BREAK-->
-        </div>
+            </div>
+            <!-- SCHEMA DETAILS END-->
+            <!-- log_details DETAILS START-->
+          {%if metrics_log|length>0%}
+          <div id="log_details" style="display:none">
+            <h1 class="subtitle ">Training Logs </h1>
+            <div class="box"  style="margin-bottom: 5px;">
+              <div class="columns" style="padding:0">
+                <div class="column" style="margin: 0;padding: 0;">
+                  <button class=" button is-primary" onclick="draw()">Plot</button>
+
+                </div>
+              </div>
+            </div>
+            <div id="plot-data">
+
+            </div>
+            
+           
+            <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth" >
+              <thead>
+                <tr>
+                  
+                  {%for col in metrics_log["cols"]%}
+                  <th><input type="checkbox" name="log_metic" value="{{col}}"><br>{{col}}</th>
+                  {%endfor%}
+                </tr>
+              </thead>
+              <tbody>
+                  {%for log in metrics_log["data"]%}
+                  <tr>
+                    
+                    {%for col in metrics_log["cols"]%}
+                    <td>{{log[col]}}</td>
+                    {%endfor%}
+                  </tr>
+                  {%endfor%}
+              </tbody>
+            </table>
+            
+            
+          <!-- BREAK-->
+          </div>
+          {%endif%}
+          <!-- log_details DETAILS END-->
+      <!-- CONTENT ENDS-->
       </div>
     </section>
+    
   </body>
+  <script>
+   
+    function elements(ele){
+      _data=ele[0]["_private"]["data"]
+      text_atth=""
+      y_c=50
+      for(var i=0;i<_data['details'].length;i++){
+
+        text_atth=text_atth+'<text x="12" y="'+y_c+'" font-size="15" fill="white">'+_data['details'][i]+'</text>'
+        y_c=y_c+20
+      }
+      y_c=y_c+20
+      //svg_string2 =  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg><svg width="142" height="91" viewBox="0 0 142 91" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="142" height="91" fill="#2D2D2D"/><rect width="142" height="33" fill="#335588"/><path d="M25.8984 22.9395C25.7402 24.293 25.2393 25.3389 24.3955 26.0771C23.5576 26.8096 22.4414 27.1758 21.0469 27.1758C19.5352 27.1758 18.3223 26.6338 17.4082 25.5498C16.5 24.4658 16.0459 23.0156 16.0459 21.1992V19.9688C16.0459 18.7793 16.2568 17.7334 16.6787 16.8311C17.1064 15.9287 17.71 15.2373 18.4893 14.7568C19.2686 14.2705 20.1709 14.0273 21.1963 14.0273C22.5557 14.0273 23.6455 14.4082 24.4658 15.1699C25.2861 15.9258 25.7637 16.9746 25.8984 18.3164H24.2021C24.0557 17.2969 23.7363 16.5586 23.2441 16.1016C22.7578 15.6445 22.0752 15.416 21.1963 15.416C20.1182 15.416 19.2715 15.8145 18.6562 16.6113C18.0469 17.4082 17.7422 18.542 17.7422 20.0127V21.252C17.7422 22.6406 18.0322 23.7451 18.6123 24.5654C19.1924 25.3857 20.0039 25.7959 21.0469 25.7959C21.9844 25.7959 22.7021 25.585 23.2002 25.1631C23.7041 24.7354 24.0381 23.9941 24.2021 22.9395H25.8984ZM27.5244 22.1572C27.5244 21.2256 27.7061 20.3877 28.0693 19.6436C28.4385 18.8994 28.9482 18.3252 29.5986 17.9209C30.2549 17.5166 31.002 17.3145 31.8398 17.3145C33.1348 17.3145 34.1807 17.7627 34.9775 18.6592C35.7803 19.5557 36.1816 20.748 36.1816 22.2363V22.3506C36.1816 23.2764 36.0029 24.1084 35.6455 24.8467C35.2939 25.5791 34.7871 26.1504 34.125 26.5605C33.4688 26.9707 32.7129 27.1758 31.8574 27.1758C30.5684 27.1758 29.5225 26.7275 28.7197 25.8311C27.9229 24.9346 27.5244 23.748 27.5244 22.2715V22.1572ZM29.1592 22.3506C29.1592 23.4053 29.4023 24.252 29.8887 24.8906C30.3809 25.5293 31.0371 25.8486 31.8574 25.8486C32.6836 25.8486 33.3398 25.5264 33.8262 24.8818C34.3125 24.2314 34.5557 23.3232 34.5557 22.1572C34.5557 21.1143 34.3066 20.2705 33.8086 19.626C33.3164 18.9756 32.6602 18.6504 31.8398 18.6504C31.0371 18.6504 30.3896 18.9697 29.8975 19.6084C29.4053 20.2471 29.1592 21.1611 29.1592 22.3506ZM39.7588 17.4902L39.8115 18.6855C40.5381 17.7715 41.4873 17.3145 42.6592 17.3145C44.6689 17.3145 45.6826 18.4482 45.7002 20.7158V27H44.0742V20.707C44.0684 20.0215 43.9102 19.5146 43.5996 19.1865C43.2949 18.8584 42.8174 18.6943 42.167 18.6943C41.6396 18.6943 41.1768 18.835 40.7783 19.1162C40.3799 19.3975 40.0693 19.7666 39.8467 20.2236V27H38.2207V17.4902H39.7588ZM51.29 24.7939L53.6455 17.4902H55.3066L51.8965 27H50.6572L47.2119 17.4902H48.873L51.29 24.7939Z" fill="white"/><path d="M18.3018 48.8623L18.4932 50.1748L18.7734 48.9922L20.7422 42.0469H21.8496L23.7705 48.9922L24.0439 50.1953L24.2559 48.8555L25.8008 42.0469H27.1201L24.707 52H23.5107L21.46 44.7471L21.3027 43.9883L21.1455 44.7471L19.0195 52H17.8232L15.417 42.0469H16.7295L18.3018 48.8623ZM36.6397 46.68L40.5597 40.562L39.6777 40.156L35.5197 46.68L39.6777 53.204L40.5597 52.798L36.6397 46.68ZM46.9378 42.04V43.1133H46.7054C45.721 43.1315 44.9371 43.4232 44.3538 43.9883C43.7705 44.5534 43.4332 45.3486 43.3421 46.374C43.8662 45.7725 44.5817 45.4717 45.4886 45.4717C46.3544 45.4717 47.0449 45.777 47.5598 46.3877C48.0794 46.9984 48.3391 47.7868 48.3391 48.7529C48.3391 49.7783 48.0589 50.5986 47.4983 51.2139C46.9423 51.8291 46.1949 52.1367 45.2561 52.1367C44.3037 52.1367 43.5312 51.7721 42.9387 51.043C42.3463 50.3092 42.0501 49.3659 42.0501 48.2129V47.7275C42.0501 45.8955 42.4397 44.4964 43.219 43.5303C44.0029 42.5596 45.1673 42.0628 46.7122 42.04H46.9378ZM45.2766 46.5244C44.8437 46.5244 44.4449 46.6543 44.0804 46.9141C43.7158 47.1738 43.4628 47.4997 43.3216 47.8916V48.3564C43.3216 49.1768 43.5061 49.8376 43.8753 50.3389C44.2444 50.8402 44.7047 51.0908 45.2561 51.0908C45.8258 51.0908 46.2724 50.8812 46.596 50.4619C46.9241 50.0426 47.0882 49.4935 47.0882 48.8145C47.0882 48.1309 46.9218 47.5794 46.5891 47.1602C46.261 46.7363 45.8235 46.5244 45.2766 46.5244ZM55.0351 48.6572H56.4159V49.6895H55.0351V52H53.7636V49.6895H49.2314V48.9443L53.6884 42.0469H55.0351V48.6572ZM50.6669 48.6572H53.7636V43.7764L53.6132 44.0498L50.6669 48.6572ZM57.1988 49.751L59.4546 47.4541L57.2125 45.1641L58.0259 44.3232L60.275 46.6133L62.524 44.3232L63.3375 45.1641L61.0953 47.4541L63.3511 49.751L62.5377 50.5918L60.275 48.2881L58.0123 50.5918L57.1988 49.751ZM70.7785 44.6445C70.7785 45.1413 70.6464 45.5833 70.382 45.9707C70.1223 46.3581 69.7691 46.6611 69.3225 46.8799C69.842 47.1032 70.2521 47.429 70.5529 47.8574C70.8583 48.2858 71.0109 48.7712 71.0109 49.3135C71.0109 50.1748 70.7193 50.8607 70.1359 51.3711C69.5572 51.8815 68.7938 52.1367 67.8459 52.1367C66.8889 52.1367 66.121 51.8815 65.5422 51.3711C64.968 50.8561 64.6809 50.1702 64.6809 49.3135C64.6809 48.7757 64.8267 48.2904 65.1184 47.8574C65.4146 47.4245 65.8225 47.0964 66.342 46.873C65.8999 46.6543 65.5513 46.3512 65.2961 45.9639C65.0409 45.5765 64.9133 45.1367 64.9133 44.6445C64.9133 43.806 65.1822 43.1406 65.7199 42.6484C66.2577 42.1562 66.9663 41.9102 67.8459 41.9102C68.7209 41.9102 69.4273 42.1562 69.965 42.6484C70.5074 43.1406 70.7785 43.806 70.7785 44.6445ZM69.7463 49.2861C69.7463 48.7301 69.5686 48.2767 69.2131 47.9258C68.8622 47.5749 68.4019 47.3994 67.8322 47.3994C67.2626 47.3994 66.8046 47.5726 66.4582 47.9189C66.1164 48.2653 65.9455 48.721 65.9455 49.2861C65.9455 49.8512 66.1118 50.2956 66.4445 50.6191C66.7818 50.9427 67.2489 51.1045 67.8459 51.1045C68.4383 51.1045 68.9032 50.9427 69.2404 50.6191C69.5777 50.291 69.7463 49.8467 69.7463 49.2861ZM67.8459 42.9492C67.3492 42.9492 66.9458 43.1042 66.6359 43.4141C66.3306 43.7194 66.1779 44.1364 66.1779 44.665C66.1779 45.1709 66.3283 45.5811 66.6291 45.8955C66.9344 46.2054 67.34 46.3604 67.8459 46.3604C68.3518 46.3604 68.7551 46.2054 69.0559 45.8955C69.3612 45.5811 69.5139 45.1709 69.5139 44.665C69.5139 44.1592 69.3566 43.7467 69.0422 43.4277C68.7277 43.1087 68.329 42.9492 67.8459 42.9492ZM72.245 49.751L74.5008 47.4541L72.2586 45.1641L73.0721 44.3232L75.3211 46.6133L77.5702 44.3232L78.3836 45.1641L76.1414 47.4541L78.3973 49.751L77.5838 50.5918L75.3211 48.2881L73.0584 50.5918L72.245 49.751ZM86.2143 42.7578L82.0923 52H80.7661L84.8745 43.0859H79.4878V42.0469H86.2143V42.7578ZM87.2911 49.751L89.547 47.4541L87.3048 45.1641L88.1183 44.3232L90.3673 46.6133L92.6163 44.3232L93.4298 45.1641L91.1876 47.4541L93.4435 49.751L92.63 50.5918L90.3673 48.2881L88.1046 50.5918L87.2911 49.751ZM101.261 42.7578L97.1384 52H95.8123L99.9207 43.0859H94.5339V42.0469H101.261V42.7578ZM103.339 53.204L107.497 46.68L103.339 40.156L102.457 40.562L106.377 46.68L102.457 52.798L103.339 53.204ZM16.1553 72V62.0469H19.4092C20.4893 62.0469 21.3005 62.2702 21.8428 62.7168C22.3896 63.1634 22.6631 63.8242 22.6631 64.6992C22.6631 65.1641 22.5309 65.5765 22.2666 65.9365C22.0023 66.292 21.6423 66.5677 21.1865 66.7637C21.7243 66.9141 22.1481 67.2012 22.458 67.625C22.7725 68.0443 22.9297 68.5456 22.9297 69.1289C22.9297 70.0221 22.6403 70.724 22.0615 71.2344C21.4827 71.7448 20.6647 72 19.6074 72H16.1553ZM17.4678 67.3447V70.9268H19.6348C20.2454 70.9268 20.7262 70.7695 21.0771 70.4551C21.4326 70.1361 21.6104 69.6986 21.6104 69.1426C21.6104 67.944 20.9587 67.3447 19.6553 67.3447H17.4678ZM17.4678 66.292H19.4502C20.0244 66.292 20.4824 66.1484 20.8242 65.8613C21.1706 65.5742 21.3438 65.1846 21.3438 64.6924C21.3438 64.1455 21.1842 63.749 20.8652 63.5029C20.5462 63.2523 20.0609 63.127 19.4092 63.127H17.4678V66.292ZM32.9347 66.68L36.8547 60.562L35.9727 60.156L31.8147 66.68L35.9727 73.204L36.8547 72.798L32.9347 66.68ZM43.2327 62.04V63.1133H43.0003C42.0159 63.1315 41.232 63.4232 40.6487 63.9883C40.0654 64.5534 39.7281 65.3486 39.637 66.374C40.1611 65.7725 40.8766 65.4717 41.7835 65.4717C42.6494 65.4717 43.3398 65.777 43.8548 66.3877C44.3743 66.9984 44.6341 67.7868 44.6341 68.7529C44.6341 69.7783 44.3538 70.5986 43.7932 71.2139C43.2373 71.8291 42.4899 72.1367 41.5511 72.1367C40.5986 72.1367 39.8261 71.7721 39.2337 71.043C38.6412 70.3092 38.345 69.3659 38.345 68.2129V67.7275C38.345 65.8955 38.7346 64.4964 39.5139 63.5303C40.2978 62.5596 41.4622 62.0628 43.0071 62.04H43.2327ZM41.5716 66.5244C41.1386 66.5244 40.7399 66.6543 40.3753 66.9141C40.0107 67.1738 39.7578 67.4997 39.6165 67.8916V68.3564C39.6165 69.1768 39.8011 69.8376 40.1702 70.3389C40.5393 70.8402 40.9996 71.0908 41.5511 71.0908C42.1207 71.0908 42.5673 70.8812 42.8909 70.4619C43.219 70.0426 43.3831 69.4935 43.3831 68.8145C43.3831 68.1309 43.2167 67.5794 42.8841 67.1602C42.5559 66.7363 42.1184 66.5244 41.5716 66.5244ZM51.33 68.6572H52.7109V69.6895H51.33V72H50.0585V69.6895H45.5263V68.9443L49.9833 62.0469H51.33V68.6572ZM46.9618 68.6572H50.0585V63.7764L49.9081 64.0498L46.9618 68.6572ZM53.4937 69.751L55.7496 67.4541L53.5074 65.1641L54.3209 64.3232L56.5699 66.6133L58.8189 64.3232L59.6324 65.1641L57.3902 67.4541L59.6461 69.751L58.8326 70.5918L56.5699 68.2881L54.3072 70.5918L53.4937 69.751ZM67.0734 64.6445C67.0734 65.1413 66.9413 65.5833 66.677 65.9707C66.4172 66.3581 66.064 66.6611 65.6174 66.8799C66.1369 67.1032 66.5471 67.429 66.8479 67.8574C67.1532 68.2858 67.3059 68.7712 67.3059 69.3135C67.3059 70.1748 67.0142 70.8607 66.4309 71.3711C65.8521 71.8815 65.0887 72.1367 64.1408 72.1367C63.1838 72.1367 62.4159 71.8815 61.8371 71.3711C61.2629 70.8561 60.9758 70.1702 60.9758 69.3135C60.9758 68.7757 61.1216 68.2904 61.4133 67.8574C61.7095 67.4245 62.1174 67.0964 62.6369 66.873C62.1949 66.6543 61.8462 66.3512 61.591 65.9639C61.3358 65.5765 61.2082 65.1367 61.2082 64.6445C61.2082 63.806 61.4771 63.1406 62.0148 62.6484C62.5526 62.1562 63.2613 61.9102 64.1408 61.9102C65.0158 61.9102 65.7222 62.1562 66.26 62.6484C66.8023 63.1406 67.0734 63.806 67.0734 64.6445ZM66.0412 69.2861C66.0412 68.7301 65.8635 68.2767 65.508 67.9258C65.1571 67.5749 64.6968 67.3994 64.1271 67.3994C63.5575 67.3994 63.0995 67.5726 62.7531 67.9189C62.4113 68.2653 62.2404 68.721 62.2404 69.2861C62.2404 69.8512 62.4068 70.2956 62.7395 70.6191C63.0767 70.9427 63.5438 71.1045 64.1408 71.1045C64.7333 71.1045 65.1981 70.9427 65.5354 70.6191C65.8726 70.291 66.0412 69.8467 66.0412 69.2861ZM64.1408 62.9492C63.6441 62.9492 63.2408 63.1042 62.9309 63.4141C62.6255 63.7194 62.4729 64.1364 62.4729 64.665C62.4729 65.1709 62.6232 65.5811 62.924 65.8955C63.2294 66.2054 63.635 66.3604 64.1408 66.3604C64.6467 66.3604 65.05 66.2054 65.3508 65.8955C65.6561 65.5811 65.8088 65.1709 65.8088 64.665C65.8088 64.1592 65.6516 63.7467 65.3371 63.4277C65.0227 63.1087 64.6239 62.9492 64.1408 62.9492ZM68.5399 69.751L70.7957 67.4541L68.5536 65.1641L69.367 64.3232L71.6161 66.6133L73.8651 64.3232L74.6786 65.1641L72.4364 67.4541L74.6922 69.751L73.8787 70.5918L71.6161 68.2881L69.3534 70.5918L68.5399 69.751ZM82.5093 62.7578L78.3872 72H77.061L81.1694 63.0859H75.7827V62.0469H82.5093V62.7578ZM83.5861 69.751L85.8419 67.4541L83.5997 65.1641L84.4132 64.3232L86.6622 66.6133L88.9112 64.3232L89.7247 65.1641L87.4825 67.4541L89.7384 69.751L88.9249 70.5918L86.6622 68.2881L84.3995 70.5918L83.5861 69.751ZM97.5554 62.7578L93.4334 72H92.1072L96.2156 63.0859H90.8289V62.0469H97.5554V62.7578ZM99.6338 73.204L103.792 66.68L99.6338 60.156L98.7518 60.562L102.672 66.68L98.7518 72.798L99.6338 73.204Z" fill="white"/></svg>';
+      svg_string ='<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg><svg width="160" height="'+y_c+'" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="'+y_c+'" fill="#2D2D2D" rx="5" ry="5"/><rect width="160" height="33" fill="#335588" rx="5" ry="5"/>'+text_atth+'<text x="10" y="25" font-size="20" fill="white">'+_data['type']+'</text></svg>'
+      
+      return {svg:"data:image/svg+xml;utf8," + encodeURIComponent(svg_string),
+              w: 160,
+              h: y_c,
+          }
+    }
+    graph_dict={{graph_dict|safe}}
+    var cy = cytoscape({
+
+      container: document.getElementById('cy'),
+				style: [
+					{
+						selector: 'node',
+						css: {
+							label: "data(label)",
+              "background-image": function(ele){ return elements(ele).svg} ,
+              width: function(ele){ return elements(ele).w},
+              height: function(ele){ return elements(ele).h},
+              shape: "round-rectangle",
+              color: "#828282"
+						}
+						
+					}
+				],
+				elements: graph_dict,
+				
+       layout: {
+        name: 'dagre',
+        rankDir: 'LR'
+      },
+        //pan: { x: 600, y: 100 },
+    });
+
+    function lineChart(data){
+      /*var trace1 = {
+        x: [1, 2, 3, 4],
+        y: [10, 15, 13, 17],
+        type: 'scatter'
+      };
+      
+      var trace2 = {
+        x: [1, 2, 3, 4],
+        y: [16, 5, 11, 9],
+        type: 'scatter'
+      };
+      
+      var data = [trace1, trace2];
+      */
+      var layout = {
+        title:'Plotting continious logs'
+      };
+      Plotly.newPlot('plot-data', data,layout);
+    }
+    //lineChart()
+    
+  </script>
 </html>
