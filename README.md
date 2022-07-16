@@ -400,6 +400,95 @@ with mlp.run():
         
 ```
 
+## UI for Pytorch Models
+![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.03.29%20PM.png?raw=true)
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.03.50%20PM.png?raw=true)
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.00%20PM.png?raw=true)
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.08%20PM.png?raw=true)
+
+![alt text](https://github.com/neelindresh/pymlpipe/blob/dev/static/Screenshot%202022-07-16%20at%208.04.21%20PM.png?raw=true)
+
+
+### Sample input for prediction
+`GET REQUEST` - to get info for the model
+    - `info` : Contains model information
+    - `request_body`: Sample post Request 
+```python
+{
+    "info": {
+        "experiment_id": "Pytorch",
+        "model_deployment_number": "51c186ddd125386c",
+        "model_mode": "non_runtime",
+        "model_type": "torch",
+        "model_url": "/predict/51c186ddd125386c",
+        "run_id": "3fffe458-9676-4bc7-a6c0-a3b4cf38e277",
+        "status": "running"
+    },
+    "request_body": {
+        "data": [
+            [
+                42.0,
+                120.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                185.7,
+                133.0,
+                31.57,
+                235.1,
+                149.0,
+                19.98,
+                256.4,
+                78.0,
+                11.54,
+                16.9,
+                6.0,
+                4.56,
+                0.0
+            ]
+        ],
+        "dtype": "float"
+    }
+}
+```
+
+For `POST REQUEST` 
+    -`data`--> list: contains data rows for prediction supports both batch prediction and single instance  ex: data --> [ [ 0,1,2,3],[3,4,56 ] ]  
+    -`dtype`--> str: for type conversion converts the data into required data type tensor
+
+
+```
+ {
+        "data": [
+            [
+                42.0,
+                120.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                185.7,
+                133.0,
+                31.57,
+                235.1,
+                149.0,
+                19.98,
+                256.4,
+                78.0,
+                11.54,
+                16.9,
+                6.0,
+                4.56,
+                0.0
+            ]
+        ],
+        "dtype": "float"
+    }
+```
 
 ---
 
