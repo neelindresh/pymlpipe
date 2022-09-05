@@ -3,21 +3,27 @@ import os
 from pymlpipe.utils import yamlio
 from pymlpipe.utils import uiutils
 from pymlpipe.utils import change2graph
+from pymlpipe.utils import database
 
 from flask_api import FlaskAPI
 import numpy as np
 import json
 import uuid
+from datetime import datetime
 #app=flask.Flask(__name__)
 
 app = FlaskAPI(__name__)
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
+PIPELINE_FOLDER_NAME="ML_pipelines"
 MODEL_DIR=os.path.join(BASE_DIR,MODEL_FOLDER_NAME)
+PIPELINE_DIR=os.path.join(BASE_DIR,PIPELINE_FOLDER_NAME)
 
 EXPERIMENT_FILE="experiment.yaml"
 DEPLOYMENT_FILE="deployment.yaml"
+QUEUE_NAME="queue.yaml"
+
 #ALL_DEPLOYED_MODELS=[]
 PREDICTORS={}
 app.secret_key="PYMLPIPE_SEC_KEY"
@@ -340,8 +346,48 @@ def start_deployment(deployment_no):
     return {"status":200}
                 
                                  
+@app.route("/jobs/")
+def jobs():
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,"info.yaml"))
+    
+    return flask.render_template("jobs.html",
+                                 pipeline=all_pipelines
+                                 )
+    
+@app.route("/jobs/run/<runid>")
+def runjobs(runid):
+    #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,"info.yaml"))
+    '''
+    all_pipelines.append({
+        "pipelinename":runid,
+        "datetime": datetime.now(),
+        "status":"Queued",
+        "ops":{}
+    })
+    '''
+    for idx,p in enumerate(all_pipelines):
+        if p["pipelinename"]==runid:
+            all_pipelines[idx]["status"]="Queued"
+            all_pipelines[idx]["jobtime"]=datetime.now()
+            
+            
+        
+    yamlio.write_to_yaml(os.path.join(PIPELINE_DIR,"info.yaml"),all_pipelines)
+    return flask.redirect(flask.url_for("jobs"))
 
-
+@app.route("/jobs/view/<runid>")
+def viewjobs(runid):
+    #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
+    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["edges"],all_pipelines["sequence"],all_pipelines["node_details"])
+    return flask.render_template("job_view.html",
+                                 pipelinename=runid,
+                                 grapg_dict=grapg_dict
+                                 )
+    
+    
+    
 def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
