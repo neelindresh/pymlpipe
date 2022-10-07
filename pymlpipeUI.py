@@ -10,9 +10,11 @@ import numpy as np
 import json
 import uuid
 from datetime import datetime
+from flaskwebgui import FlaskUI
 #app=flask.Flask(__name__)
 
 app = FlaskAPI(__name__)
+ui = FlaskUI(app)
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
@@ -381,9 +383,12 @@ def viewjobs(runid):
     #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
     all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
     grapg_dict=change2graph.makegraph_pipeline(all_pipelines["edges"],all_pipelines["sequence"],all_pipelines["node_details"])
+    nodes_logs={k:all_pipelines["node_details"][k]["log"] for k in all_pipelines["node_details"]}
     return flask.render_template("job_view.html",
                                  pipelinename=runid,
-                                 grapg_dict=grapg_dict
+                                 grapg_dict=grapg_dict,
+                                 nodes=nodes_logs,
+                                 initital_node=nodes_logs[list(nodes_logs.keys())[0]]
                                  )
     
     
@@ -407,7 +412,8 @@ def start_ui(host=None,port=None,debug=False):
         
         
     
-    
+def start_gui():
+    ui.run()
 
 if __name__ == '__main__':
     app.run()

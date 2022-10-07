@@ -3,6 +3,8 @@ import cloudpickle
 from pymlpipe.utils import database,yamlio
 import os
 import datetime
+import traceback,sys
+
 
 class Node:
     def __init__(self,name, func,path):
@@ -15,7 +17,7 @@ class Node:
         #mainify(func)
         #dill.dump(func, open(name+".pkl", "wb"))
         
-        self.filename=os.path.join(self.path,name+".pkl")
+        self.filename=os.path.join(self.path,name+".mld")
         cloudpickle.dump(func, open(self.filename, "wb"))
         
     
@@ -145,15 +147,21 @@ class Pipeline:
         #print("input-->",inp)
         return inp
         
-    def _change_status(self,node,status):
+    def _change_status(self,node,status,info=None):
         dag=yamlio.read_yaml(os.path.join(self.path_pipe,self.name+".yaml"))
         if status=="Started":
             
             dag["node_details"][node]["status"]=status
+            
             dag["node_details"][node]["start_time"]=str(datetime.datetime.now())
-        elif status=="Completed":
+            dag["node_details"][node]["log"]="======"+status.upper()+"======"+str(datetime.datetime.now())+"\n"
+        elif status=="Completed" or status=="Failed":
             dag["node_details"][node]["status"]=status
             dag["node_details"][node]["end_time"]=str(datetime.datetime.now())
+            dag["node_details"][node]["log"]+="======"+status.upper()+"======"+str(datetime.datetime.now())+"\n"
+            if info!=None:
+                dag["node_details"][node]["log"]+="\n"+str(info)+"======"
+                
                 
         dag=yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"),dag)
     def bfs(self,graph,entry_node,_prev_outputs,_functions,_node_order,functions_args):
@@ -168,9 +176,18 @@ class Pipeline:
                         func=_functions[neighbour]
                         self._change_status(neighbour,"Started")
                         #print(self._make_previous_output(_prev_outputs,_node_order[neighbour]))
-                        _prev_outputs[neighbour]=func(*self._make_previous_output(_prev_outputs,_node_order[neighbour],functions_args[neighbour]))
+                        try:
+                            _prev_outputs[neighbour]=func(*self._make_previous_output(_prev_outputs,_node_order[neighbour],functions_args[neighbour]))
+                            
+                            self._change_status(neighbour,"Completed")
+                            
                         #func()
-                        self._change_status(neighbour,"Completed")
+                        except Exception as e:
+                            #print(neighbour)
+                            print(traceback.format_exc())
+                            #raceback.print_exception(*sys.exc_info())
+                            self._change_status(neighbour,"Failed",info=traceback.format_exc())
+                        
                         visited.append(neighbour)
                         queue.append(neighbour)
         return _prev_outputs
@@ -197,8 +214,15 @@ class Pipeline:
         for node in entrynode:
             func=functions[node]
             self._change_status(node,"Started")
-            output_nodes[node]=func(*args,**kwargs)
-            self._change_status(node,"Completed")
+            try:
+                print("node", node)
+                output_nodes[node]=func(*args,**kwargs)
+                self._change_status(node,"Completed")
+            except Exception as e:
+                print(node)
+                
+                traceback.print_exception(*sys.exc_info())
+                self._change_status(node,"Failed")
             output_nodes=self.bfs(graph,node,output_nodes,functions,self.dag["node_order"],functions_args)
         return output_nodes
             

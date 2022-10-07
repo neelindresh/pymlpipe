@@ -34,7 +34,7 @@ def makegraph(ops,architecture):
 def makegraph_pipeline(edges,sequence,node_details):
     #print(node_details)
     graph_dict={"nodes":[],"edges":[]}
-    color={"Queued":"#828282","Completed":"#80ff80","Failed":"","Started":"#ffff33"}
+    color={"Queued":"#828282","Completed":"#80ff80","Failed":"#fc3d03","Started":"#ffff33"}
     for op in sequence:
         #print(op)
         graph_dict["nodes"].append({'data':{ 'id': op ,
