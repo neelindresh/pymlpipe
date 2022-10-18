@@ -394,8 +394,7 @@ def viewjobs(runid):
     
 def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
-    """Start UI server
-    """
+    
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
     for i in ALL_DEPLOYED_MODELS:
         model_type=i["model_type"]
