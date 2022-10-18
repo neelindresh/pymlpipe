@@ -412,6 +412,8 @@ def start_ui(host=None,port=None,debug=False):
         
     
 def start_gui():
+    """Start gui server
+    """
     ui.run()
 
 if __name__ == '__main__':
