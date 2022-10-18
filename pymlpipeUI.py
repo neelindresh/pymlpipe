@@ -11,7 +11,6 @@ import json
 import uuid
 from datetime import datetime
 from flaskwebgui import FlaskUI
-#app=flask.Flask(__name__)
 
 app = FlaskAPI(__name__)
 ui = FlaskUI(app)
