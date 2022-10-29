@@ -22,3 +22,5 @@ def create_folder(folder_path,name=None):
 
 def getfolders(path):
     return os.listdir(path)
+
+    

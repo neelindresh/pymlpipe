@@ -47,7 +47,7 @@ class Pipeline:
             raise ValueError(f"Node Name {name} already exists! Please provide different Name")
         self.sequence.append(name)
         node=Node(name,func,self.path_pipe)
-        self.dag["nodes"][name]={"path":node.filename,"entry":entry_node,"args":args}
+        self.dag["nodes"][name]={"path":node.filename,"mould_file":node.name+".mld","entry":entry_node,"args":args,"folder":self.PIPELINE_FOLDER,"subfolder":self.name,}
         self.dag["node_details"][name]={"status":"Queued","start_time":"-","end_time":"-","log":""}
         if entry_node:
             self.is_entry_node=True
@@ -94,6 +94,8 @@ class Pipeline:
             data.append({
                 "pipelinename":self.name,
                 "path":self.path_pipe,
+                "folder":self.PIPELINE_FOLDER,
+                "subfolder":self.name,
                 "created_at":  datetime.datetime.now(),
                 "status":"-",
                 "jobtime":"",
@@ -103,6 +105,8 @@ class Pipeline:
             data[idx].update({
                 "pipelinename":self.name,
                 "path":self.path_pipe,
+                "folder":self.PIPELINE_FOLDER,
+                "subfolder":self.name,
                 "created_at":  datetime.datetime.now(),
                 "status":"-",
                 "jobtime":"",
@@ -192,7 +196,10 @@ class Pipeline:
                         queue.append(neighbour)
         return _prev_outputs
     
-    
+    def _get_path(base_path,folder):
+        os.path.join(base_path,folder)
+        
+        
     def run(self,*args,**kwargs):
         if len(self.dag["sequence"])==0:
             raise ValueError("Error!!! No Dag Provided!!!!")
@@ -206,7 +213,7 @@ class Pipeline:
             #print(node,self.dag["nodes"][node])
             if self.dag["nodes"][node]["entry"]:
                 entrynode.append(node)
-            functions[node]=self.load(self.dag["nodes"][node]["path"])
+            functions[node]=self.load(self._get_path(self.path_pipe, self.dag["nodes"][node]["mould_file"]))#self.dag["nodes"][node]["path"])
             functions_args[node]=self.dag["nodes"][node]["args"]
         graph=self._create_graph(self.dag["edges"])
         self.dag["node_details"]={node:{"status":"Queued","start_time":"-","end_time":"-","log":""} for node in self.dag["node_details"]}
