@@ -370,8 +370,12 @@ def runjobs(runid):
     '''
     for idx,p in enumerate(all_pipelines):
         if p["pipelinename"]==runid:
-            all_pipelines[idx]["status"]="Queued"
-            all_pipelines[idx]["jobtime"]=datetime.now()
+            if all_pipelines[idx]["status"]=="Started":
+                all_pipelines[idx]["status"]="Stopped"
+                all_pipelines[idx]["jobtime"]=datetime.now()
+            else:
+                all_pipelines[idx]["status"]="Queued"
+                all_pipelines[idx]["jobtime"]=datetime.now()
             
             
         

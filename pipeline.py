@@ -36,6 +36,15 @@ class Pipeline:
         self.is_entry_node=False
         
     def _make_edges(self,node,edges):
+        """Create the DAG edges for the nodes, in a src--> trg format
+
+        Args:
+            node (_type_): _description_
+            edges (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         edge_list=[]
         for edge in edges:
             edge_list.append({"src":edge,"target":node})
@@ -168,7 +177,7 @@ class Pipeline:
                 
                 
         dag=yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"),dag)
-    def bfs(self,graph,entry_node,_prev_outputs,_functions,_node_order,functions_args):
+    def bfs(self,graph,entry_node,_prev_outputs,_functions,_node_order,functions_args,job_name,flag_variable_path):
         visited = [entry_node] # List to keep track of visited nodes.
         queue = [entry_node]     #Initialize a queue
         while queue:
@@ -179,6 +188,7 @@ class Pipeline:
                     if neighbour not in visited:
                         func=_functions[neighbour]
                         self._change_status(neighbour,"Started")
+                        if not self._check_for_job_status(job_name,flag_variable_path): sys.exit() 
                         #print(self._make_previous_output(_prev_outputs,_node_order[neighbour]))
                         try:
                             _prev_outputs[neighbour]=func(*self._make_previous_output(_prev_outputs,_node_order[neighbour],functions_args[neighbour]))
@@ -196,8 +206,8 @@ class Pipeline:
                         queue.append(neighbour)
         return _prev_outputs
     
-    def _get_path(base_path,folder):
-        os.path.join(base_path,folder)
+    def _get_path(self,base_path,folder):
+        return os.path.join(base_path,folder)
         
         
     def run(self,*args,**kwargs):
@@ -231,6 +241,44 @@ class Pipeline:
                 traceback.print_exception(*sys.exc_info())
                 self._change_status(node,"Failed")
             output_nodes=self.bfs(graph,node,output_nodes,functions,self.dag["node_order"],functions_args)
+        return output_nodes
+    def _check_for_job_status(self,jobname,queue_name):
+        all_jobs=yamlio.read_yaml(queue_name)
+        status=[j["status"] for j in all_jobs if j["pipelinename"]==jobname]
+        return False if status[0]=="Stopped" else True
+    def run_serialized(self,flag_variable_path,job_name,*args,**kwargs):
+        if len(self.dag["sequence"])==0:
+            raise ValueError("Error!!! No Dag Provided!!!!")
+        #if not self.is_entry_node:
+        #    raise ValueError("Error!!! Entry Node Not defined please provide and entry node with entry_node=True!!!!")
+        entrynode=[]
+        functions={}
+        output_nodes={}
+        functions_args={}
+        for node in self.dag["nodes"]:
+            #print(node,self.dag["nodes"][node])
+            if self.dag["nodes"][node]["entry"]:
+                entrynode.append(node)
+            functions[node]=self.load(self._get_path(self.path_pipe, self.dag["nodes"][node]["mould_file"]))#self.dag["nodes"][node]["path"])
+            functions_args[node]=self.dag["nodes"][node]["args"]
+        graph=self._create_graph(self.dag["edges"])
+        self.dag["node_details"]={node:{"status":"Queued","start_time":"-","end_time":"-","log":""} for node in self.dag["node_details"]}
+        yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"), self.dag)
+        for node in entrynode:
+            func=functions[node]
+            self._change_status(node,"Started")
+            try:
+                print("node", node,self._check_for_job_status(job_name,flag_variable_path))
+                if not self._check_for_job_status(job_name,flag_variable_path):
+                    sys.exit()
+                output_nodes[node]=func(*args,**kwargs)
+                self._change_status(node,"Completed")
+            except Exception as e:
+                print(node)
+                
+                traceback.print_exception(*sys.exc_info())
+                self._change_status(node,"Failed")
+            output_nodes=self.bfs(graph,node,output_nodes,functions,self.dag["node_order"],functions_args,job_name,flag_variable_path)
         return output_nodes
             
             
