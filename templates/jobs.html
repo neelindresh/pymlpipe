@@ -1,0 +1,55 @@
+{% extends "template.html" %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/jobs/">Pipeline</a></li>
+        
+      </ul>
+</nav>
+
+<table class="table is-striped" style="width:100%;">
+  <thead>
+    <tr>
+      <td>Pipeline Name</td>
+      <td>Created On</td>
+      <td>Start Time</td>
+      <td>Status</td>
+      <td>Actions</td>
+    </tr>
+  </thead>
+  <tbody>
+    {%for pipe in pipeline%}
+    <tr>
+      <td>
+        {{pipe["pipelinename"]}}
+      </td>
+      <td>
+        {{pipe["created_at"]}}
+      </td>
+      <td>
+        {{pipe["jobtime"]}}
+      </td>
+      <td>
+        {{pipe["status"]}}
+      </td>
+      {%if pipe["status"]=="Queued" or pipe["status"]=="Started"%}
+      <td>
+        <a class="button is-danger" href="/jobs/run/{{pipe['pipelinename']}}">Stop</a>
+        <a class="button is-warning" href="/jobs/view/{{pipe['pipelinename']}}">view</a>
+      </td>
+      {%else%}
+      <td>
+        <a class="button is-primary" href="/jobs/run/{{pipe['pipelinename']}}">Start</a>
+        <a class="button is-warning" href="/jobs/view/{{pipe['pipelinename']}}">view</a>
+      </td>
+      
+      {%endif%}
+    </tr>
+    {%endfor%}
+  </tbody>
+</table>
+
+{% endblock %}

@@ -6,8 +6,8 @@ def search_arch(architecture, node):
     return None
 
 def makegraph(ops,architecture):
-    print(ops)
-    print(architecture)
+    #print(ops)
+    #print(architecture)
     graph_dict={"nodes":[],"edges":[]}
     for op in ops:
         #prev=ops[op]['name'] if ops[op]['prev']=="" else ops[op]['prev']
@@ -29,3 +29,21 @@ def makegraph(ops,architecture):
             graph_dict["edges"].append({ 'data': { 'id': op, 'source': ops[op]['name'], 'target': ops[op]['next']} })
     return graph_dict
     
+    
+
+def makegraph_pipeline(edges,sequence,node_details):
+    #print(node_details)
+    graph_dict={"nodes":[],"edges":[]}
+    color={"Queued":"#828282","Completed":"#80ff80","Failed":"#fc3d03","Started":"#ffff33"}
+    for op in sequence:
+        #print(op)
+        graph_dict["nodes"].append({'data':{ 'id': op ,
+                                            "label":op ,
+                                            "color":color[node_details[op]["status"]]
+                                            } })
+        
+        for edge in edges:
+            if edge["src"]==op:
+                graph_dict["edges"].append({'data':{ 'id': edge["src"]+ edge["target"], 'source': edge["src"], 'target': edge["target"]} })
+                
+    return graph_dict
