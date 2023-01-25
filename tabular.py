@@ -493,7 +493,7 @@ class ScikitLearn:
         
         
     def register_model(self,model_name,model):
-        if "sklearn" in str(type(model)):
+        if "sklearn" in str(type(model)) or "catboost" in str(type(model)):
             
             pickle.dump(model, open(os.path.join(self.folders["models"],model_name+'.pkl'), 'wb'))
             self.model_type="scikit-learn"
