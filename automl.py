@@ -11,7 +11,7 @@ from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,r2_score,mean_absolute_error,mean_squared_error,make_scorer
 #import PyMLPipe from tabular 
-from tabular import PyMLPipe
+from pymlpipe.tabular import PyMLPipe
 from sklearn.model_selection import GridSearchCV
 
 
