@@ -11,7 +11,7 @@ import json
 import uuid
 from datetime import datetime
 from flaskwebgui import FlaskUI
-
+import pandas as pd
 
 app = FlaskAPI(__name__)
 ui = FlaskUI(app)
@@ -164,7 +164,19 @@ def runpage(run_id):
     
     if "model_ops" in run_details["model"]:
         graph_dict=change2graph.makegraph(run_details["model"]["model_ops"],run_details["model"]["model_architecture"])
-    
+    XAI=""
+    if "XAI" in run_details:
+        XAI_temp=run_details["XAI"]
+        XAI_feature_map=pd.read_csv(XAI_temp["feature_explainer"])
+        XAI_feature_map=XAI_feature_map.round(3)
+        XAI={
+            "table":{
+                "columns":XAI_feature_map.columns,
+                "rows":XAI_feature_map.values
+            },
+            "image": flask.Markup(open(XAI_temp["shap"]).read())
+        }
+        print(XAI_feature_map.values)
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
@@ -179,7 +191,8 @@ def runpage(run_id):
                                  metrics_log=metrics_log,
                                  metrics_log_plot=metrics_log_plot,
                                  model_type=model_type,
-                                 graph_dict=graph_dict
+                                 graph_dict=graph_dict,
+                                 XAI=XAI
                                  )
 @app.route("/download_artifact/<uid>")
 def download_artifact(uid):
