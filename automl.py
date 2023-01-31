@@ -21,7 +21,7 @@ class AutoMLPipe():
         '''
         exp_name: name of experiment
         task: regression/classification
-        metric: for classification -> accuracy,recall,precision, f1/ for regression -> MAE,MSE,RMSE,R2 Score
+        metric: for classification -> accuracy,recall,precision,f1/ for regression -> MAE,MSE,RMSE,R2 Score
         data: data on which the model to be fit
         label: target variable
         tags: list of custom-tags for the run
@@ -400,7 +400,7 @@ class AutoMLPipe():
                     "RMSE": mean_squared_error(testy,predictions,squared=False)}
                 self.mlp.log_metrics(result_set)
             if self.register_model==True:
-                self.mlp.scikit_learn.register_model(best_model_name, CV_cfl)
+                self.mlp.scikit_learn.register_model(best_model_name, CV_cfl.best_estimator_)
             if self.register==True:
                 # Save train data and test data
                 self.mlp.register_artifact("train", trainx)
