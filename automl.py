@@ -1,4 +1,3 @@
-from pymlpipe.tabular import PyMLPipe
 import pandas as pd
 from tqdm import tqdm
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier,BaggingRegressor,AdaBoostRegressor, ExtraTreesRegressor, RandomForestRegressor,GradientBoostingRegressor
@@ -11,8 +10,10 @@ from xgboost import XGBClassifier, XGBRegressor
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,r2_score,mean_absolute_error,mean_squared_error,make_scorer
-#from tabular import PyMLPipe
+#import PyMLPipe from tabular 
+from pymlpipe.tabular import PyMLPipe
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
 from itertools import chain
 
 
@@ -238,8 +239,8 @@ class AutoMLPipe():
         self.mlp.set_experiment(self.exp_name)
         # Set Version name
         self.mlp.set_version(self.version)
-        trainx,testx,trainy,testy=train_test_split(self.data,self.label,test_size=self.test_size)
         
+        trainx,testx,trainy,testy=train_test_split(self.data,self.label,test_size=self.test_size)      
         
         result=pd.DataFrame()
         prediction_set={}
@@ -247,49 +248,56 @@ class AutoMLPipe():
             for model_name,model in tqdm(self.classification_models.items()):
                 if model_name not in self.exclude:        
                     if tune==True:
-                            
-                        predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
-                        predictions=predictions.tolist()
-                        if model_name=='cbc':
-                            predictions=list(chain(*predictions))
-                        fin=dict()
-                        fin['name']=model_name
-                        fin['accuracy']=result_set['accuracy']
-                        fin['precision']=result_set['precision']
-                        fin['recall']=result_set['recall']
-                        fin['f1']=result_set['f1_score']
-                    
-                    else:
-                        with self.mlp.run():
-                            default_tags=[model_name,"Classification"]
-                            tag_list=default_tags+self.tags
-                            self.mlp.set_tags(tag_list)
-                        
-                            model=model
-                            model.fit(trainx, trainy)
-                            predictions=model.predict(testx)
+                        try:   
+                            predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
                             predictions=predictions.tolist()
                             if model_name=='cbc':
                                 predictions=list(chain(*predictions))
-
-                            self.mlp.log_metric("accuracy", accuracy_score(testy,predictions))
-                            self.mlp.log_metric("precision", precision_score(testy,predictions,average='macro'))
-                            self.mlp.log_metric("recall", recall_score(testy,predictions,average='macro'))
-                            self.mlp.log_metric("f1_score", f1_score(testy,predictions,average='macro'))
-
-                            if self.register==True:
-                                self.mlp.register_artifact("train", trainx)
-                                self.mlp.register_artifact("test", testx,artifact_type="testing")
-                            if self.register_model==True:
-                                self.mlp.scikit_learn.register_model(model_name, model)
-                        
-                            result1=self.mlp.get_info()
                             fin=dict()
                             fin['name']=model_name
-                            fin['accuracy']=result1['metrics']['Accuracy']
-                            fin['precision']=result1['metrics']['Precision']
-                            fin['recall']=result1['metrics']['Recall']
-                            fin['f1']=result1['metrics']['F1']
+                            fin['accuracy']=result_set['accuracy']
+                            fin['precision']=result_set['precision']
+                            fin['recall']=result_set['recall']
+                            fin['f1']=result_set['f1_score']
+                        except Exception as e:
+                            print (e)
+                            continue
+                    
+                    else:
+                        try:
+                            with self.mlp.run():
+                                default_tags=[model_name,"Classification"]
+                                tag_list=default_tags+self.tags
+                                self.mlp.set_tags(tag_list)
+                            
+                                model=model
+                                model.fit(trainx, trainy)
+                                predictions=model.predict(testx)
+                                predictions=predictions.tolist()
+                                if model_name=='cbc':
+                                    predictions=list(chain(*predictions))
+
+                                self.mlp.log_metric("accuracy", accuracy_score(testy,predictions))
+                                self.mlp.log_metric("precision", precision_score(testy,predictions,average='macro'))
+                                self.mlp.log_metric("recall", recall_score(testy,predictions,average='macro'))
+                                self.mlp.log_metric("f1_score", f1_score(testy,predictions,average='macro'))
+
+                                if self.register==True:
+                                    self.mlp.register_artifact("train", trainx)
+                                    self.mlp.register_artifact("test", testx,artifact_type="testing")
+                                if self.register_model==True:
+                                    self.mlp.scikit_learn.register_model(model_name, model)
+                            
+                                result1=self.mlp.get_info()
+                                fin=dict()
+                                fin['name']=model_name
+                                fin['accuracy']=result1['metrics']['accuracy']
+                                fin['precision']=result1['metrics']['precision']
+                                fin['recall']=result1['metrics']['recall']
+                                fin['f1']=result1['metrics']['f1_score']
+                        except Exception as e:
+                            print(e)                        
+                            continue
                     
                     prediction_set[model_name]=predictions
                     result=result.append(fin,ignore_index=True)
@@ -297,44 +305,52 @@ class AutoMLPipe():
             for model_name,model in tqdm(self.regression_models.items()):
                 if model_name not in self.exclude:
                     if tune==True:
-                        predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
-                        predictions=predictions.tolist()
-                        fin=dict()
-                        fin['name']=model_name
-                        fin['MAE']=result_set['MAE']
-                        fin['MSE']=result_set['MSE']
-                        fin['R2 Score']=result_set['R2 Score']
-                        fin['RMSE']=result_set['RMSE']
-                    else:
-                        with self.mlp.run():
-                            default_tags=[model_name,"Regression"]
-                            tag_list=default_tags+self.tags
-                            self.mlp.set_tags(tag_list)
-                            model=model
-                            model.fit(trainx, trainy)
-                            predictions=model.predict(testx)
+                        try:
+                            predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
                             predictions=predictions.tolist()
-                         
-                            # log performace metrics
-                            self.mlp.log_metric("R2 Score", r2_score(testy,predictions))
-                            self.mlp.log_metric("MAE", mean_absolute_error(testy,predictions))
-                            self.mlp.log_metric("MSE", mean_squared_error(testy,predictions))
-                            self.mlp.log_metric("RMSE", mean_squared_error(testy,predictions,squared=False))
-                            if self.register==True:
-                                # Save train data and test data
-                                self.mlp.register_artifact("train", trainx)
-                                self.mlp.register_artifact("test", testx,artifact_type="testing")
-                            # Save the model
-                            if self.register_model==True:
-                                    self.mlp.scikit_learn.register_model(model_name, model)
-                            result1=self.mlp.get_info()
-                        
                             fin=dict()
                             fin['name']=model_name
-                            fin['MAE']=result1['metrics']['MAE']
-                            fin['MSE']=result1['metrics']['MSE']
-                            fin['RMSE']=result1['metrics']['RMSE']
-                            fin['R2 Score']=result1['metrics']['R2 Score']
+                            fin['MAE']=result_set['MAE']
+                            fin['MSE']=result_set['MSE']
+                            fin['R2 Score']=result_set['R2 Score']
+                            fin['RMSE']=result_set['RMSE']
+                        except Exception as e:
+                            print(e)
+                            continue
+                    else:
+                        try:
+                            with self.mlp.run():
+                                default_tags=[model_name,"Regression"]
+                                tag_list=default_tags+self.tags
+                                self.mlp.set_tags(tag_list)
+                                model=model
+                                model.fit(trainx, trainy)
+                                predictions=model.predict(testx)
+                                predictions=predictions.tolist()
+                            
+                                # log performace metrics
+                                self.mlp.log_metric("R2 Score", r2_score(testy,predictions))
+                                self.mlp.log_metric("MAE", mean_absolute_error(testy,predictions))
+                                self.mlp.log_metric("MSE", mean_squared_error(testy,predictions))
+                                self.mlp.log_metric("RMSE", mean_squared_error(testy,predictions,squared=False))
+                                if self.register==True:
+                                    # Save train data and test data
+                                    self.mlp.register_artifact("train", trainx)
+                                    self.mlp.register_artifact("test", testx,artifact_type="testing")
+                                # Save the model
+                                if self.register_model==True:
+                                        self.mlp.scikit_learn.register_model(model_name, model)
+                                result1=self.mlp.get_info()
+                            
+                                fin=dict()
+                                fin['name']=model_name
+                                fin['MAE']=result1['metrics']['MAE']
+                                fin['MSE']=result1['metrics']['MSE']
+                                fin['RMSE']=result1['metrics']['RMSE']
+                                fin['R2 Score']=result1['metrics']['R2 Score']
+                        except Exception as e:
+                            print (e)
+                            continue    
                     
                     prediction_set[model_name]=predictions  
                     result=result.append(fin, ignore_index=True)    
