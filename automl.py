@@ -14,12 +14,12 @@ from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
 from pymlpipe.tabular import PyMLPipe 
 #from tabular import PyMLPipe
 from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer, RobustScaler
 from itertools import chain
 
 
 class AutoMLPipe():
-    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,transform=False,scale='standard',cols_to_scale=[],register_model=False,register_artifacts=False,exclude=[]):
+    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,transform=False,scale='standard',cols_to_scale=[],categorical_cols=[],register_model=False,register_artifacts=False,exclude=[]):
         '''
         exp_name: name of experiment
         task: regression/classification
@@ -47,6 +47,7 @@ class AutoMLPipe():
         self.transform=transform
         self.scale=scale
         self.cols_to_scale=cols_to_scale
+        self.categorical_cols=categorical_cols
         self.mlp=PyMLPipe()
         self.register_model=register_model
         self.register=register_artifacts
@@ -249,6 +250,7 @@ class AutoMLPipe():
 
         if self.transform==True:
             numeric_cols=self.data.select_dtypes(include=[np.number]).columns
+            numeric_cols=[item for item in numeric_cols if item not in self.categorical_cols]
             cols_to_scale=self.cols_to_scale
             if cols_to_scale==[]:
                 cols_to_scale=numeric_cols
@@ -256,22 +258,21 @@ class AutoMLPipe():
             if check==True:
                 if self.scale=='standard':
                     scaler = StandardScaler()
-                    scaler.fit(self.data[cols_to_scale])
-                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
                 elif self.scale=='minmax':
                     scaler = MinMaxScaler()
-                    scaler.fit(self.data[cols_to_scale])
-                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
                 elif self.scale=='normalize':
                     scaler = Normalizer()
-                    scaler.fit(self.data[cols_to_scale])
-                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
-                else: pass
+                elif self.scale=='robust':
+                    scaler = RobustScaler()                       
+                scaler.fit(self.data[cols_to_scale])
+                self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])     
             else:
                 print('Scaling operation cannot be completed as column type is not int/float')
-        
+
+        if self.categorical_cols!=[]:
+            self.data = pd.get_dummies(self.data, columns = self.categorical_cols)
+
         trainx,testx,trainy,testy=train_test_split(self.data,self.label,test_size=self.test_size)      
-        print(trainx)
         result=pd.DataFrame()
         prediction_set={}
         if self.task=='classification':
