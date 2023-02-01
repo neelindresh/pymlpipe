@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, ExtraTreesClassifier, GradientBoostingClassifier, RandomForestClassifier,BaggingRegressor,AdaBoostRegressor, ExtraTreesRegressor, RandomForestRegressor,GradientBoostingRegressor
 from sklearn.model_selection import train_test_split
@@ -10,15 +11,15 @@ from xgboost import XGBClassifier, XGBRegressor
 from catboost import CatBoostClassifier, CatBoostRegressor
 from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,r2_score,mean_absolute_error,mean_squared_error,make_scorer
-#import PyMLPipe from tabular 
-from pymlpipe.tabular import PyMLPipe
+from pymlpipe.tabular import PyMLPipe 
+#from tabular import PyMLPipe
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, Normalizer
 from itertools import chain
 
 
 class AutoMLPipe():
-    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,register_model=False,register_artifacts=False,exclude=[]):
+    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,transform=False,scale='standard',cols_to_scale=[],register_model=False,register_artifacts=False,exclude=[]):
         '''
         exp_name: name of experiment
         task: regression/classification
@@ -28,6 +29,9 @@ class AutoMLPipe():
         tags: list of custom-tags for the run
         test_size: size of test dataset
         version: experiment version
+        transform:bool
+        scale: 'standard'/'minmax'/'normalize'
+        cols_to_scale: list of columns to scale. Should be numeric or float
         register_model: register experiement model
         register_artifacts: register experiment artifacts
         exclude: models to be excluded during autoML runs
@@ -40,6 +44,9 @@ class AutoMLPipe():
         self.test_size=test_size
         self.version=version
         self.exclude=exclude
+        self.transform=transform
+        self.scale=scale
+        self.cols_to_scale=cols_to_scale
         self.mlp=PyMLPipe()
         self.register_model=register_model
         self.register=register_artifacts
@@ -239,9 +246,32 @@ class AutoMLPipe():
         self.mlp.set_experiment(self.exp_name)
         # Set Version name
         self.mlp.set_version(self.version)
+
+        if self.transform==True:
+            numeric_cols=self.data.select_dtypes(include=[np.number]).columns
+            cols_to_scale=self.cols_to_scale
+            if cols_to_scale==[]:
+                cols_to_scale=numeric_cols
+            check =  all(item in numeric_cols for item in cols_to_scale)
+            if check==True:
+                if self.scale=='standard':
+                    scaler = StandardScaler()
+                    scaler.fit(self.data[cols_to_scale])
+                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
+                elif self.scale=='minmax':
+                    scaler = MinMaxScaler()
+                    scaler.fit(self.data[cols_to_scale])
+                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
+                elif self.scale=='normalize':
+                    scaler = Normalizer()
+                    scaler.fit(self.data[cols_to_scale])
+                    self.data[cols_to_scale] = scaler.transform(self.data[cols_to_scale])
+                else: pass
+            else:
+                print('Scaling operation cannot be completed as column type is not int/float')
         
         trainx,testx,trainy,testy=train_test_split(self.data,self.label,test_size=self.test_size)      
-        
+        print(trainx)
         result=pd.DataFrame()
         prediction_set={}
         if self.task=='classification':
