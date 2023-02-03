@@ -31,6 +31,7 @@ XAI_MAP={
  'StackingClassifier',
  'StackingRegressor',
  "XGBClassifier",
+ "XGBRegressor",
  "CatBoostClassifier",
  "CatBoostRegressor",
  "LGBMClassifier",
