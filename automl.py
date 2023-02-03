@@ -19,7 +19,7 @@ from itertools import chain
 
 
 class AutoMLPipe():
-    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,transform=False,scale='standard',cols_to_scale=[],categorical_cols=[],register_model=False,register_artifacts=False,exclude=[]):
+    def __init__(self,exp_name,task,metric,data,label,tags=[],test_size=0.20,version=1.0,transform=False,scale='standard',cols_to_scale=[],categorical_cols=[],register_model=False,register_artifacts=False,explain=False,exclude=[]):
         '''
         exp_name: name of experiment
         task: regression/classification
@@ -32,8 +32,10 @@ class AutoMLPipe():
         transform:bool
         scale: 'standard'/'minmax'/'normalize'
         cols_to_scale: list of columns to scale. Should be numeric or float
+        categorical_cols: columns to one-hot encode
         register_model: register experiement model
         register_artifacts: register experiment artifacts
+        explain= xai implementation 
         exclude: models to be excluded during autoML runs
         '''
         self.exp_name=exp_name
@@ -51,6 +53,7 @@ class AutoMLPipe():
         self.mlp=PyMLPipe()
         self.register_model=register_model
         self.register=register_artifacts
+        self.explain=explain
         self.tags=tags
         self.classification_models={
                 'log_reg': LogisticRegression(),
@@ -90,11 +93,12 @@ class AutoMLPipe():
             'cbr': CatBoostRegressor()
 
         }
+        self.explain_exclude=['adac','bagc','gbc','mlpc','svc','adar','bagr','svr','mlpr']
         self.param_grid=dict()
         self.param_grid['log_reg']={
             'penalty': ['l1','l2'],
             'C': [0.1,1],
-            'solver': ['lbfgs', 'liblinear', 'newton-cg'],
+            'solver': ['liblinear', 'newton-cg'],
         }
         self.param_grid['pac']={
             'C': [0.01,0.1,1],
@@ -192,7 +196,7 @@ class AutoMLPipe():
             'selection' : ['cyclic', 'random']
         }
         self.param_grid['ridge']={
-            'solver' : ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga', 'lbfgs']
+            'solver' : ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']
         }
         self.param_grid['poi']={
             'alpha': [0.5,1,1.5]
@@ -297,6 +301,7 @@ class AutoMLPipe():
                     else:
                         try:
                             with self.mlp.run():
+                                print(model_name)
                                 default_tags=[model_name,"Classification"]
                                 tag_list=default_tags+self.tags
                                 self.mlp.set_tags(tag_list)
@@ -312,7 +317,10 @@ class AutoMLPipe():
                                 self.mlp.log_metric("precision", precision_score(testy,predictions,average='macro'))
                                 self.mlp.log_metric("recall", recall_score(testy,predictions,average='macro'))
                                 self.mlp.log_metric("f1_score", f1_score(testy,predictions,average='macro'))
-
+                                if self.explain==True:
+                                    if model_name not in self.explain_exclude:
+                                        self.mlp.explainer(model,trainx) 
+                                    else: print('XAI is not available for ',model_name) 
                                 if self.register==True:
                                     self.mlp.register_artifact("train", trainx)
                                     self.mlp.register_artifact("test", testx,artifact_type="testing")
@@ -364,6 +372,10 @@ class AutoMLPipe():
                                 self.mlp.log_metric("MAE", mean_absolute_error(testy,predictions))
                                 self.mlp.log_metric("MSE", mean_squared_error(testy,predictions))
                                 self.mlp.log_metric("RMSE", mean_squared_error(testy,predictions,squared=False))
+                                if self.explain==True:
+                                    if model_name not in self.explain_exclude:
+                                        self.mlp.explainer(model,trainx) 
+                                    else: print('XAI is not available for ',model_name)
                                 if self.register==True:
                                     # Save train data and test data
                                     self.mlp.register_artifact("train", trainx)
@@ -420,6 +432,11 @@ class AutoMLPipe():
                 self.mlp.log_params(CV_cfl.best_params_)
                 predictions=CV_cfl.best_estimator_.predict(testx)
 
+                if self.explain==True:
+                    if best_model_name not in self.explain_exclude:
+                        self.mlp.explainer(CV_cfl.best_estimator_,trainx) 
+                    else: print('XAI is not available for ',best_model_name)      
+
                 result_set={
                     "accuracy": accuracy_score(testy,predictions),
                     "precision": precision_score(testy,predictions,average='macro'),
@@ -446,6 +463,10 @@ class AutoMLPipe():
                     "R2 Score": r2_score(testy,predictions),
                     "RMSE": mean_squared_error(testy,predictions,squared=False)}
                 self.mlp.log_metrics(result_set)
+                if self.explain==True:
+                    if best_model_name not in self.explain_exclude:
+                        self.mlp.explainer(CV_cfl.best_estimator_,trainx) 
+                    else: print('XAI is not available for ',best_model_name)
             if self.register_model==True:
                 self.mlp.scikit_learn.register_model(best_model_name, CV_cfl.best_estimator_)
             if self.register==True:
