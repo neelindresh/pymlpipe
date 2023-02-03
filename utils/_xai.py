@@ -30,7 +30,11 @@ XAI_MAP={
  'VotingRegressor',
  'StackingClassifier',
  'StackingRegressor',
- "XGBClassifier"
+ "XGBClassifier",
+ "CatBoostClassifier",
+ "CatBoostRegressor",
+ "LGBMClassifier",
+ "LGBMRegressor"
  ],
 "LinearModels": ['ARDRegression',
  'BayesianRidge',
