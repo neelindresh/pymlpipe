@@ -105,7 +105,7 @@ class Explainer():
         shap_xgb_explainer = shap.TreeExplainer(model)
         shap_xgb_values_train = shap_xgb_explainer.shap_values(xtrain)
         shap.summary_plot(shap_xgb_values_train, xtrain,feature_names=feature_map,show=False)
-        pl.savefig("{fig_name}.svg".format(fig_name=fig_name),dpi=700)
+        pl.savefig("{fig_name}.svg".format(fig_name=fig_name),dpi=700,bbox_inches='tight')
         pl.close('all')
         
         
@@ -113,7 +113,7 @@ class Explainer():
         shap_xgb_explainer = shap.LinearExplainer(model,xtrain)
         shap_xgb_values_train = shap_xgb_explainer.shap_values(xtrain)
         shap.summary_plot(shap_xgb_values_train, xtrain,feature_names=feature_map,show=False)
-        pl.savefig("{fig_name}.svg".format(fig_name=fig_name),dpi=700)
+        pl.savefig("{fig_name}.svg".format(fig_name=fig_name),dpi=700,bbox_inches='tight')
         pl.close('all')
 
     def permutation_feature_importance(self,model,trainx,trainy):
