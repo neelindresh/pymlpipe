@@ -529,22 +529,22 @@ The AutoML class is simple to run and with the help of few lines of code you'll 
 - Load the data
 - Transform it into X & y datasets.
 - Instanciate the AutoMLPipe class:
-    -`exp_name`: name of experiment
-    -`task`: regression/classification
-    -`metric`: for classification -> accuracy,recall,precision,f1/ for regression -> MAE,MSE,RMSE,R2 Score
-    -`data`: data on which the model to be fit
-    -`label`: target variable
-    -`tags`: list of custom-tags for the run
-    -`test_size`: size of test dataset
-    -`version`: experiment version
-    -`transform`:bool
-    -`scale`: 'standard'/'minmax'/'normalize'
-    -`cols_to_scale`: list of columns to scale. Should be numeric or float
-    -`categorical_cols`: columns to one-hot encode
-    -`register_model`: register experiement model
-    -`register_artifacts`: register experiment artifacts
-    -`explain`: xai implementation 
-    -`exclude`: models to be excluded during autoML runs 
+    - `exp_name`: name of experiment
+    - `task`: regression/classification
+    - `metric`: for classification -> accuracy,recall,precision,f1/ for regression -> MAE,MSE,RMSE,R2 Score
+    - `data`: data on which the model to be fit
+    - `label`: target variable
+    - `tags`: list of custom-tags for the run
+    - `test_size`: size of test dataset
+    - `version`: experiment version
+    - `transform`:bool
+    - `scale`: 'standard'/'minmax'/'normalize'
+    - `cols_to_scale`: list of columns to scale. Should be numeric or float
+    - `categorical_cols`: columns to one-hot encode
+    - `register_model`: register experiement model
+    - `register_artifacts`: register experiment artifacts
+    - `explain`: xai implementation 
+    - `exclude`: models to be excluded during autoML runs 
 - run the experiment by calling the `run_automl` function.
     - `tune=True`: Every autoML models will be hyperparameter tuned.
     - `tune_best=True`: Only the best model will be hyperparameter tuned.
