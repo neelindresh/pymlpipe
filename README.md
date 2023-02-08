@@ -537,7 +537,7 @@ The AutoML class is simple to run and with the help of few lines of code you'll 
     - `tags`: list of custom-tags for the run
     - `test_size`: size of test dataset
     - `version`: experiment version
-    - `transform`:bool
+    - `transform`: If transformation is to be applied on the dataset.
     - `scale`: 'standard'/'minmax'/'normalize'
     - `cols_to_scale`: list of columns to scale. Should be numeric or float
     - `categorical_cols`: columns to one-hot encode
@@ -550,8 +550,8 @@ The AutoML class is simple to run and with the help of few lines of code you'll 
     - `tune_best=True`: Only the best model will be hyperparameter tuned.
 - Now you can see the experiment running in the ui page and also in the console.
 - Once it is completed you will get results and predictions of the runs.
-    -If `tune_best=False`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the dictionary of all the prediction values of all the models.
-    -If `tune_best=True`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the a list of prediction values of the hyperparameter tuned best model.
+    - If `tune_best=False`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the dictionary of all the prediction values of all the models.
+    - If `tune_best=True`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the a list of prediction values of the hyperparameter tuned best model.
 
 ---
 
