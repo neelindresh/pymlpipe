@@ -169,14 +169,15 @@ def runpage(run_id):
         XAI_temp=run_details["XAI"]
         XAI_feature_map=pd.read_csv(XAI_temp["feature_explainer"])
         XAI_feature_map=XAI_feature_map.round(3)
+        print(XAI_temp)
         XAI={
             "table":{
                 "columns":XAI_feature_map.columns,
                 "rows":XAI_feature_map.values
             },
-            "image": flask.Markup(open(XAI_temp["shap"]).read())
+            "image": flask.Markup(open(XAI_temp["shap"]).read()) if XAI_temp["shap"]!="" else ""
         }
-        print(XAI_feature_map.values)
+        #print(XAI_feature_map.values)
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
