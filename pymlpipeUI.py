@@ -10,11 +10,11 @@ import numpy as np
 import json
 import uuid
 from datetime import datetime
-from flaskwebgui import FlaskUI
+
 import pandas as pd
 
 app = FlaskAPI(__name__)
-ui = FlaskUI(app)
+
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
@@ -432,12 +432,6 @@ def start_ui(host=None,port=None,debug=False):
         app.run(host=host,port=port,debug=debug)
         
         
-    
-def start_gui():
-    """
-    Start gui server
-    """
-    ui.run()
 
 if __name__ == '__main__':
     app.run()
