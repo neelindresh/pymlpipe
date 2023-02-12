@@ -249,6 +249,9 @@ class PipeLine:
                     
                     visited.append(neighbour)
                     queue.append(neighbour)
+                    
+                    
+    
     def run(self):
          #Initialize a queue
         dag=self.dag
