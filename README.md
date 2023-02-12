@@ -204,39 +204,19 @@ mlp.log_metric("Accuracy", .92)
 ```python
 
 mlp.log_metrics(
-
-{
-
-"Accuracy": accuracy_score(testy,predictions),
-
-"Precision": precision_score(testy,predictions,average='macro'),
-
-"Recall", recall_score(testy,predictions,average='macro'),
-
-}
-
+	{
+	"Accuracy": accuracy_score(testy,predictions),
+	"Precision": precision_score(testy,predictions,average='macro'),
+	"Recall": recall_score(testy,predictions,average='macro'),
+	}
 )
 
-  
-  
-
-mlp.log_metrics(
-
-{
-
-"Accuracy": .92,
-
-"Precision": .87,
-
-"Recall", .98,
-
-}
-
+mlp.log_metrics({
+	"Accuracy": .92,
+	"Precision": .87,
+	"Recall": .98,
+	}
 )
-
-  
-  
-
 ```
 
 * Save an artifact `[Optional]` - You can save training/testing/validation/dev/prod data for monitoring and comparison
@@ -260,23 +240,15 @@ mlp.log_metrics(
   
 
 ```python
-
 mlp.register_artifact("train.csv", trainx)
-
-  
-
 mlp.register_artifact("train.csv", trainx)
-
 ```
 
 * Register Model `[Optional]` - You can register the model. This will help in Quick deployment
 
-  
 
 ```python
-
 mlp.scikit_learn.register_model("logistic regression", model)
-
 ```
 
   
@@ -288,35 +260,19 @@ mlp.scikit_learn.register_model("logistic regression", model)
 ```python
 
 from sklearn.datasets import load_iris
-
 import pandas as pd
-
 from sklearn.model_selection import train_test_split
-
 from sklearn.linear_model import LogisticRegression
-
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
-
 #import PyMLPipe from tabular
-
 from pymlpipe.tabular import PyMLPipe
 
-  
-  
-
 # Initiate the class
-
 mlp=PyMLPipe()
-
 # Set experiment name
-
 mlp.set_experiment("IrisDataV2")
-
 # Set Version name
-
 mlp.set_version(0.2)
-
-  
 
 iris_data=load_iris()
 
@@ -328,58 +284,30 @@ df=pd.DataFrame(data,columns=iris_data["feature_names"])
 
 trainx,testx,trainy,testy=train_test_split(df,target)
 
-  
-  
-
 # to start monitering use mlp.run()
 
 with mlp.run():
-
-# set tags
-
-mlp.set_tags(["Classification","test run","logisticRegression"])
-
-model=LogisticRegression()
-
-model.fit(trainx, trainy)
-
-predictions=model.predict(testx)
-
-# log performace metrics
-
-mlp.log_metric("Accuracy", accuracy_score(testy,predictions))
-
-mlp.log_metric("Precision", precision_score(testy,predictions,average='macro'))
-
-mlp.log_metric("Recall", recall_score(testy,predictions,average='macro'))
-
-mlp.log_metric("F1", f1_score(testy,predictions,average='macro'))
-
-  
-
-# Save train data and test data
-
-mlp.register_artifact("train", trainx)
-
-mlp.register_artifact("test", testx,artifact_type="testing")
-
-# Save the model
-
-mlp.scikit_learn.register_model("logistic regression", model)
-
-  
-
+	# set tags
+	mlp.set_tags(["Classification","test run","logisticRegression"])
+	model=LogisticRegression()
+	model.fit(trainx, trainy)
+	predictions=model.predict(testx)
+	# log performace metrics
+	mlp.log_metric("Accuracy", accuracy_score(testy,predictions))
+	mlp.log_metric("Precision", precision_score(testy,predictions,average='macro'))
+	mlp.log_metric("Recall", recall_score(testy,predictions,average='macro'))
+	mlp.log_metric("F1", f1_score(testy,predictions,average='macro'))
+	# Save train data and test data
+	mlp.register_artifact("train", trainx)
+	mlp.register_artifact("test", testx,artifact_type="testing")
+	# Save the model
+	mlp.scikit_learn.register_model("logistic regression", model)
 ```
 
   
 
 ## Launch UI
-
-  
-
 To start the UI
-
-  
 
 ```bash
 
@@ -392,9 +320,6 @@ or
 ```python
 
 from pymlpipe.pymlpipeUI import start_ui
-
-  
-  
 
 start_ui(host='0.0.0.0', port=8085)
 
@@ -450,35 +375,10 @@ start_ui(host='0.0.0.0', port=8085)
 ```python
 
 {
-
-"data":[
-
-[
-
-5.6,
-
-3.0,
-
-4.5,
-
-1.5
-
-],
-
-[
-
-5.6,
-
-3.0,
-
-4.5,
-
-1.5
-
-]
-
-]
-
+	"data":[
+		[5.6,3.0,4.5,1.5],
+		[5.6,3.0,4.5,1.5]	
+	]
 }
 
 ```
@@ -505,11 +405,11 @@ start_ui(host='0.0.0.0', port=8085)
 
 mlp.log_metrics_continious({
 
-"accuracy": .9,
-
-"precision": .8,
-
-"recall": .7
+	"accuracy": .9,
+	
+	"precision": .8,
+	
+	"recall": .7
 
 })
 
@@ -524,11 +424,7 @@ mlp.log_metrics_continious({
   
 
 ```python
-
 mlp.pytorch.register_model("pytorch_example1", model)
-
-  
-
 ```
 
 * To register a pytorch model use `.pytorch.register_model_with_runtime(modelname, modelobject, train_data_sample)`
@@ -542,11 +438,7 @@ mlp.pytorch.register_model("pytorch_example1", model)
   
 
 ```python
-
 mlp.pytorch.register_model_with_runtime("pytorch_example1", model, train_x)
-
-  
-
 ```
 
   
@@ -556,151 +448,82 @@ mlp.pytorch.register_model_with_runtime("pytorch_example1", model, train_x)
 ```python
 
 import torch
-
 import pandas as pd
-
 from sklearn.preprocessing import LabelEncoder
-
 from sklearn.model_selection import train_test_split
-
 from sklearn.metrics import accuracy_score,f1_score
-
 from pymlpipe.tabular import PyMLPipe
 
 df=pd.read_csv("train.csv")
 
 encoders=["area_code","state","international_plan","voice_mail_plan","churn"]
 
-  
-
 for i in encoders:
 
-le=LabelEncoder()
-
-df[i]=le.fit_transform(df[i])
+	le=LabelEncoder()
+	
+	df[i]=le.fit_transform(df[i])
 
 trainy=df["churn"]
 
 trainx=df[['state', 'account_length', 'area_code', 'international_plan',
-
 'voice_mail_plan', 'number_vmail_messages', 'total_day_minutes',
-
 'total_day_calls', 'total_day_charge', 'total_eve_minutes',
-
 'total_eve_calls', 'total_eve_charge', 'total_night_minutes',
-
 'total_night_calls', 'total_night_charge', 'total_intl_minutes',
-
 'total_intl_calls', 'total_intl_charge',
-
 'number_customer_service_calls']]
 
-  
-  
 
 class Model(torch.nn.Module):
+	
+	def __init__(self,col_size):
+	
+		super().__init__()
+		
+		# using sequencial
+		
+		self.seq=torch.nn.Sequential(
+			torch.nn.Linear(col_size,15),
+			torch.nn.ReLU(),
+			torch.nn.Linear(15,10),
+			torch.nn.ReLU(),
+			torch.nn.Linear(10,1)
+		)
 
-def __init__(self,col_size):
+		#using torch layers
 
-super().__init__()
-
-# using sequencial
-
-self.seq=torch.nn.Sequential(
-
-torch.nn.Linear(col_size,15),
-
-torch.nn.ReLU(),
-
-torch.nn.Linear(15,10),
-
-torch.nn.ReLU(),
-
-torch.nn.Linear(10,1)
-
-)
-
-#using torch layers
-
-'''
-
-self.linear_layer_1=torch.nn.Linear(col_size,15)
-
-self.relu_1=torch.nn.ReLU()
-
-self.linear_layer_2=torch.nn.Linear(15,10)
-
-self.relu_2=torch.nn.ReLU()
-
-self.linear_layer_3=torch.nn.Linear(10,1)
-
-'''
-
-def forward(self,x):
-
-out=self.seq(x)
-
-'''
-
-out=self.relu_1(self.linear_layer_1(x))
-
-out=self.relu_12self.linear_layer_3(out))
-
-out=self.linear_layer_3(out)
-
-'''
-
-return torch.sigmoid(out)
+	def forward(self,x):
+		out=self.seq(x)
+	
+		return torch.sigmoid(out)
 
 model=Model(len(trainx.columns))
-
-  
-
 train_x,test_x,train_y,test_y=train_test_split(trainx,trainy)
-
-  
-
 train_x=torch.from_numpy(train_x.values)
-
 train_x=train_x.type(torch.FloatTensor)
-
 train_y=torch.from_numpy(train_y.values)
-
 train_y=train_y.type(torch.FloatTensor)
-
-  
-
 test_x=torch.from_numpy(test_x.values)
-
 test_x=test_x.type(torch.FloatTensor)
-
 test_y=torch.from_numpy(test_y.values)
-
 test_y=test_y.type(torch.FloatTensor)
 
-  
-  
-
 optimizer=torch.optim.SGD(model.parameters(),lr=0.001)
-
-  
-
 criterion=torch.nn.BCELoss()
-
-  
-  
 
 def validate(model,testx,testy):
 
-prediction=model(testx)
-
-prediction=torch.where(prediction>.5,1,0)
-
-accu=accuracy_score(prediction.detach().numpy(),test_y.unsqueeze(1).detach().numpy())
-
-f1=f1_score(prediction.detach().numpy(),test_y.unsqueeze(1).detach().numpy())
-
-return {"accuracy":accu,"f1":f1}
+	prediction=model(testx)
+	
+	prediction=torch.where(prediction>.5,1,0
+	accu=accuracy_score(
+	prediction.detach().numpy(),test_y.unsqueeze(1).detach().numpy()
+	)
+	
+	f1=f1_score(prediction.detach().numpy(),test_y.unsqueeze(1).detach().numpy())
+	
+	return {"accuracy":accu,"f1":f1}
 
   
   
@@ -721,49 +544,36 @@ mlp.set_version(0.2)
 
 with mlp.run():
 
-mlp.register_artifact("churndata.csv",df)
-
-mlp.log_params({
-
-"lr":0.01,
-
-"optimizer":"SGD",
-
-"loss_fuction":"BCEloss"
-
-})
-
-for epoch in range(epochs):
-
-loss_batch=0
-
-for batch in range(1000,5000,1000):
-
-optimizer.zero_grad()
-
-train_data=train_x[batch-1000:batch]
-
-output=model(train_data)
-
-loss=criterion(output,train_y[batch-1000:batch].unsqueeze(1))
-
-loss.backward()
-
-optimizer.step()
-
-loss_batch+=loss.item()
-
-  
-
-metrics=validate(model,test_x,test_y)
-
-metrics["loss"]=loss_batch
-
-metrics["epoch"]=epoch
-
-mlp.log_metrics_continious(metrics)
-
-mlp.pytorch.register_model("pytorch_example1", model)
+	mlp.register_artifact("churndata.csv",df)
+	
+	mlp.log_params({
+	
+	"lr":0.01,
+	
+	"optimizer":"SGD",
+	
+	"loss_fuction":"BCEloss"
+	
+	})
+	
+	for epoch in range(epochs):
+	
+		loss_batch=0
+	
+		for batch in range(1000,5000,1000):
+			optimizer.zero_grad()
+			train_data=train_x[batch-1000:batch]
+			output=model(train_data)
+			loss=criterion(output,train_y[batch-1000:batch].unsqueeze(1))
+			loss.backward()
+			optimizer.step()
+			loss_batch+=loss.item()
+			
+		metrics=validate(model,test_x,test_y)
+		metrics["loss"]=loss_batch
+		metrics["epoch"]=epoch
+		mlp.log_metrics_continious(metrics)
+		mlp.pytorch.register_model("pytorch_example1", model)
 
 ```
 
@@ -824,74 +634,31 @@ mlp.pytorch.register_model("pytorch_example1", model)
 
 "info": {
 
-"experiment_id": "Pytorch",
+			"experiment_id": "Pytorch",
+			
+			"model_deployment_number": "51c186ddd125386c",
+			
+			"model_mode": "non_runtime",
+			
+			"model_type": "torch",
+			
+			"model_url": "/predict/51c186ddd125386c",
+			
+			"run_id": "3fffe458-9676-4bc7-a6c0-a3b4cf38e277",
+			
+			"status": "running"
 
-"model_deployment_number": "51c186ddd125386c",
+	},
 
-"model_mode": "non_runtime",
-
-"model_type": "torch",
-
-"model_url": "/predict/51c186ddd125386c",
-
-"run_id": "3fffe458-9676-4bc7-a6c0-a3b4cf38e277",
-
-"status": "running"
-
-},
-
-"request_body": {
-
-"data": [
-
-[
-
-42.0,
-
-120.0,
-
-1.0,
-
-0.0,
-
-0.0,
-
-0.0,
-
-185.7,
-
-133.0,
-
-31.57,
-
-235.1,
-
-149.0,
-
-19.98,
-
-256.4,
-
-78.0,
-
-11.54,
-
-16.9,
-
-6.0,
-
-4.56,
-
-0.0
-
-]
-
-],
-
-"dtype": "float"
-
-}
-
+	"request_body": {
+		"data": [
+		[
+			42.0,120.0,1.0,0.0,0.0,0.0,185.7,133.0,31.57,235.1,149.0,19.98,
+			256.4,78.0,11.54,16.9,6.0,4.56,0.0
+		]
+	],
+	"dtype": "float"	
+	}
 }
 
 ```
@@ -910,55 +677,13 @@ For `POST REQUEST`
 ```
 
 {
-
 "data": [
-
-[
-
-42.0,
-
-120.0,
-
-1.0,
-
-0.0,
-
-0.0,
-
-0.0,
-
-185.7,
-
-133.0,
-
-31.57,
-
-235.1,
-
-149.0,
-
-19.98,
-
-256.4,
-
-78.0,
-
-11.54,
-
-16.9,
-
-6.0,
-
-4.56,
-
-0.0
-
-]
-
-],
-
-"dtype": "float"
-
+			[
+			42.0,120.0,1.0,0.0,0.0,0.0,185.7,133.0,31.57,235.1,149.0,19.98,
+			256.4,78.0,11.54,16.9,6.0,4.56,0.0
+			]
+		],
+		"dtype": "float"
 }
 
 ```
@@ -970,40 +695,38 @@ For `POST REQUEST`
 ```python
 
 from automl import AutoMLPipe
-
 from sklearn.datasets import load_iris,load_diabetes
-
 import pandas as pd
-
 import numpy as np
-
-  
-  
 
 def main():
 
-load_data=load_diabetes()
-
-data=load_data["data"]
-
-target=load_data["target"]
-
-  
-
-df=pd.DataFrame(data,columns=load_data["feature_names"])
-
-preds,result=AutoMLPipe(exp_name="DiabAutoMLV1",task="regression",metric="RMSE",data=df,label=target,tags=["new_data","reg"],test_size=0.2,version=1.0,transform=True,scale='normalize',cols_to_scale=[],categorical_cols=[],register_model=True,explain=True,exclude=[]).run_automl(tune=True,tune_best=False)
-
-#DataFrame with comparative metrics of all the models
-
-print(result)
-
-#Dictionary with model names and the predictions
-
-print(preds)
-
-  
-
+	load_data=load_diabetes()
+	data=load_data["data"]
+	target=load_data["target"]
+	
+	df=pd.DataFrame(data,columns=load_data["feature_names"])
+	automl_obj=AutoMLPipe(
+		exp_name="DiabAutoMLV1",
+		task="regression",
+		metric="RMSE",
+		data=df,
+		label=target,
+		tags=["new_data","reg"],
+		test_size=0.2,
+		version=1.0,
+		transform=True,
+		scale='normalize',
+		cols_to_scale=[],
+		categorical_cols=[],
+		register_model=True,
+		explain=True,exclude=[]
+	)
+	preds,result=automl_obj.run_automl(tune=True,tune_best=False)
+	#DataFrame with comparative metrics of all the models
+	print(result)
+	#Dictionary with model names and the predictions
+	print(preds)
 if __name__ == '__main__':
 
 main()
