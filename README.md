@@ -8,7 +8,7 @@
 
 [![Downloads](https://pepy.tech/badge/pymlpipe/month)](https://pepy.tech/project/pymlpipe)
 
-![alt text](https://badgen.net/badge/version/0.2.6/red?icon=github)
+![alt text](https://badgen.net/badge/version/0.2.7/red?icon=github)
 
 ![](https://badgen.net/pypi/python/black)
 
