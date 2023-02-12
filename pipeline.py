@@ -46,11 +46,11 @@ class PipeLine:
         """_summary_
 
         Args:
-            node_name (str): _description_
-            function (_type_): _description_
-            input_nodes (list, optional): _description_. Defaults to None.
-            entry_node (bool, optional): _description_. Defaults to False.
-            args (list, optional): _description_. Defaults to None.
+            node_name (str): Name of the node
+            function (_type_): Python function you want to execute
+            input_nodes (list, optional): List of nodes that are connected to this node. The connected nodes should return a value which will act as an input to the node . Defaults to None.
+            entry_node (bool, optional): boolean flag indicating if this is the starting node(first node). Defaults to False.
+            args (list, optional): Run time arguments . Defaults to None.
 
         Raises:
             ValueError: _description_
