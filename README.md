@@ -499,6 +499,59 @@ For `POST REQUEST`
         "dtype": "float"
     }
 ```
+## Quick Start (AutoML)
+
+```python
+from automl import AutoMLPipe
+from sklearn.datasets import  load_iris,load_diabetes
+import pandas as pd
+import numpy as np
+
+
+def main():
+    
+    load_data=load_diabetes()
+    data=load_data["data"]
+    target=load_data["target"]
+
+    df=pd.DataFrame(data,columns=load_data["feature_names"])
+    preds,result=AutoMLPipe(exp_name="DiabAutoMLV1",task="regression",metric="RMSE",data=df,label=target,tags=["new_data","reg"],test_size=0.2,version=1.0,transform=True,scale='normalize',cols_to_scale=[],categorical_cols=[],register_model=True,explain=True,exclude=[]).run_automl(tune=True,tune_best=False)
+    
+    #DataFrame with comparative metrics of all the models
+    print(result)
+    #Dictionary with model names and the predictions 
+    print(preds)
+
+if __name__ == '__main__':
+    main()
+```
+The AutoML class is simple to run and with the help of few lines of code you'll be able to run several models on your data. You can even choose to hyperparameter tune every model or you can just tune the best model based on the metric that you provide. Below are the simple steps to start your AutoML experiment. 
+- Load the data
+- Transform it into X & y datasets.
+- Instanciate the AutoMLPipe class:
+    - `exp_name`: name of experiment
+    - `task`: regression/classification
+    - `metric`: for classification -> accuracy,recall,precision,f1/ for regression -> MAE,MSE,RMSE,R2 Score
+    - `data`: data on which the model to be fit
+    - `label`: target variable
+    - `tags`: list of custom-tags for the run
+    - `test_size`: size of test dataset
+    - `version`: experiment version
+    - `transform`: If transformation is to be applied on the dataset.
+    - `scale`: 'standard'/'minmax'/'normalize'
+    - `cols_to_scale`: list of columns to scale. Should be numeric or float
+    - `categorical_cols`: columns to one-hot encode
+    - `register_model`: register experiement model
+    - `register_artifacts`: register experiment artifacts
+    - `explain`: xai implementation 
+    - `exclude`: models to be excluded during autoML runs 
+- run the experiment by calling the `run_automl` function.
+    - `tune=True`: Every autoML models will be hyperparameter tuned.
+    - `tune_best=True`: Only the best model will be hyperparameter tuned.
+- Now you can see the experiment running in the ui page and also in the console.
+- Once it is completed you will get results and predictions of the runs.
+    - If `tune_best=False`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the dictionary of all the prediction values of all the models.
+    - If `tune_best=True`: The `result` will have the dataframe with metrics of each model. The `pred` will contain the a list of prediction values of the hyperparameter tuned best model.
 
 ---
 

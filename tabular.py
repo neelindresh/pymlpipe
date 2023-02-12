@@ -1,7 +1,7 @@
 import os
 from pymlpipe.utils.database import create_folder
 from pymlpipe.utils.getschema import schema_
-
+from pymlpipe.utils import _xai as xai
 import uuid
 import yaml
 from contextlib import contextmanager
@@ -161,7 +161,24 @@ class PyMLPipe:
             
         self.context_manager.write_to_yaml(self.info)
         self.__reset__()
-        
+    def explainer(self,model,trainx):
+        """_summary_: This is an explainer API that do global explainibilty. 
+
+        Args:
+            model (scikit-learn): Model Object
+            trainx (Pandas DataFrame): Data Frame for Global Explainability
+
+        Raises:
+            TypeError: _description_
+        """
+        if not isinstance(trainx, pd.DataFrame):
+            raise TypeError("Error: Please provide a valid data pd.Dataframe or correct artifact Name")
+        model_type=str(type(model))
+        if ('sklearn' not in model_type) and ("catboost" not in model_type):
+            raise TypeError("Error: Scikit-learn or Catboost or Xgboost Expected got {model_type}".format(model_type=model_type) )
+        explainer_instance=xai.Explainer(model,trainx,self.context_manager.folders["artifacts"])
+        artifacts=explainer_instance.explain()
+        self.info["XAI"]=artifacts
     
     def set_experiment(self,name):
         """_summary_: sets the experiment name
@@ -493,12 +510,13 @@ class ScikitLearn:
         
         
     def register_model(self,model_name,model):
-        if "sklearn" in str(type(model)):
+        if "sklearn" in str(type(model)) or "catboost" in str(type(model)):
             
             pickle.dump(model, open(os.path.join(self.folders["models"],model_name+'.pkl'), 'wb'))
             self.model_type="scikit-learn"
         else:
             raise TypeError("Error:Expected ScikitLearn Module!!!!")
+        self.model=model
         self.model_name=model_name
         self.model_path=os.path.join(self.folders["models"],model_name+'.pkl')
         self.model_class=type(model).__name__
@@ -560,6 +578,7 @@ class Pytorch:
             torch.jit.save(traced_cell, os.path.join(self.folders["models"],model_name+".pt"))
         except Exception as e:
             raise Exception(e)
+        self.model=model
         self.model_name=model_name
         self.model_path=os.path.join(self.folders["models"],model_name+'.pt')
         self.model_class=type(model).__name__

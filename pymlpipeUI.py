@@ -3,21 +3,29 @@ import os
 from pymlpipe.utils import yamlio
 from pymlpipe.utils import uiutils
 from pymlpipe.utils import change2graph
+from pymlpipe.utils import database
 
 from flask_api import FlaskAPI
 import numpy as np
 import json
 import uuid
-#app=flask.Flask(__name__)
+from datetime import datetime
+from flaskwebgui import FlaskUI
+import pandas as pd
 
 app = FlaskAPI(__name__)
+ui = FlaskUI(app)
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
+PIPELINE_FOLDER_NAME="ML_pipelines"
 MODEL_DIR=os.path.join(BASE_DIR,MODEL_FOLDER_NAME)
+PIPELINE_DIR=os.path.join(BASE_DIR,PIPELINE_FOLDER_NAME)
 
 EXPERIMENT_FILE="experiment.yaml"
 DEPLOYMENT_FILE="deployment.yaml"
+QUEUE_NAME="queue.yaml"
+
 #ALL_DEPLOYED_MODELS=[]
 PREDICTORS={}
 app.secret_key="PYMLPIPE_SEC_KEY"
@@ -156,7 +164,20 @@ def runpage(run_id):
     
     if "model_ops" in run_details["model"]:
         graph_dict=change2graph.makegraph(run_details["model"]["model_ops"],run_details["model"]["model_architecture"])
-    
+    XAI=""
+    if "XAI" in run_details:
+        XAI_temp=run_details["XAI"]
+        XAI_feature_map=pd.read_csv(XAI_temp["feature_explainer"])
+        XAI_feature_map=XAI_feature_map.round(3)
+        print(XAI_temp)
+        XAI={
+            "table":{
+                "columns":XAI_feature_map.columns,
+                "rows":XAI_feature_map.values
+            },
+            "image": flask.Markup(open(XAI_temp["shap"]).read()) if XAI_temp["shap"]!="" else ""
+        }
+        #print(XAI_feature_map.values)
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
@@ -171,7 +192,8 @@ def runpage(run_id):
                                  metrics_log=metrics_log,
                                  metrics_log_plot=metrics_log_plot,
                                  model_type=model_type,
-                                 graph_dict=graph_dict
+                                 graph_dict=graph_dict,
+                                 XAI=XAI
                                  )
 @app.route("/download_artifact/<uid>")
 def download_artifact(uid):
@@ -245,7 +267,7 @@ def predict(hashno):
         }
     }
     if flask.request.method=="POST":
-        #data=flask.request.form['random_data']
+        
         data=flask.request.data
         dtype=None
         if "dtype" in data:
@@ -340,10 +362,60 @@ def start_deployment(deployment_no):
     return {"status":200}
                 
                                  
+@app.route("/jobs/")
+def jobs():
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,"info.yaml"))
+    
+    return flask.render_template("jobs.html",
+                                 pipeline=all_pipelines
+                                 )
+    
+@app.route("/jobs/run/<runid>")
+def runjobs(runid):
+    #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,"info.yaml"))
+    '''
+    all_pipelines.append({
+        "pipelinename":runid,
+        "datetime": datetime.now(),
+        "status":"Queued",
+        "ops":{}
+    })
+    '''
+    for idx,p in enumerate(all_pipelines):
+        if p["pipelinename"]==runid:
+            if all_pipelines[idx]["status"]=="Started":
+                all_pipelines[idx]["status"]="Stopped"
+                all_pipelines[idx]["jobtime"]=datetime.now()
+            else:
+                all_pipelines[idx]["status"]="Queued"
+                all_pipelines[idx]["jobtime"]=datetime.now()
+            
+            
+        
+    yamlio.write_to_yaml(os.path.join(PIPELINE_DIR,"info.yaml"),all_pipelines)
+    return flask.redirect(flask.url_for("jobs"))
 
-
+@app.route("/jobs/view/<runid>")
+def viewjobs(runid):
+    #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
+    all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
+    print(all_pipelines)
+    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["graph"],all_pipelines["node_details"])
+    nodes_logs={k:all_pipelines["node_details"][k]["log"] for k in all_pipelines["node_details"]}
+    #nodes_logs={}
+    return flask.render_template("job_view.html",
+                                 pipelinename=runid,
+                                 grapg_dict=grapg_dict,
+                                 nodes=nodes_logs,
+                                 initital_node=nodes_logs[list(nodes_logs.keys())[0]]
+                                 )
+    
+    
+    
 def start_ui(host=None,port=None,debug=False):
     '''Implemet logic for try catch'''
+    
     ALL_DEPLOYED_MODELS=yamlio.read_yaml(os.path.join(MODEL_DIR,DEPLOYMENT_FILE))
     for i in ALL_DEPLOYED_MODELS:
         model_type=i["model_type"]
@@ -361,7 +433,11 @@ def start_ui(host=None,port=None,debug=False):
         
         
     
-    
+def start_gui():
+    """
+    Start gui server
+    """
+    ui.run()
 
 if __name__ == '__main__':
     app.run()

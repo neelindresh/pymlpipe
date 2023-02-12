@@ -1,0 +1,85 @@
+{% extends "template.html" %}
+
+{% block content %}
+<script>
+  nodes={{nodes|safe}}
+  function changelog(){
+    nodename=document.getElementById("lognode").value
+    document.getElementById("logviewer").value=nodes[nodename]
+  }
+</script>
+<style>
+    #cy {
+        width: 100%;
+        height: 400px;
+        display: block;
+        border: 1px solid gainsboro
+      }
+</style>
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="/jobs/">Pipeline</a></li>
+        <li class="is-active"><a href="/jobs/view/{{pipelinename}}" aria-current="page">{{pipelinename}}</a></li>
+      </ul>
+</nav>
+<div id="cy">
+
+</div>
+<div id="logs">
+  <div class="box">
+    <div class="select">
+      <select onchange="changelog()" id="lognode">
+       {%for i in nodes%}
+       <option>{{i}}</option>
+       {%endfor%}
+      </select>
+    </div>
+    <div>
+      <textarea class="textarea" readonly id="logviewer">{{initital_node}}</textarea>
+    </div>
+  </div>
+</div>
+<script>
+graph_dict={{grapg_dict|safe}}
+var cy = cytoscape({
+
+    container: document.getElementById('cy'),
+              style: [
+                  {
+                      selector: 'node',
+                      css: {
+                          label: "data(label)",
+            
+                            width: 45,
+                            height: 35,
+                            shape: "round-rectangle",
+                            color: "#828282",
+                            "background-color":"data(color)",
+                            'font-size':15,
+                            'line-color': 'red'
+                      }
+                      
+                  },
+                  {
+                    selector: 'edge',
+                    css: {
+                      'width': 2,
+                      'line-color': '#ccc',
+                      'target-arrow-color': '#ccc',
+                      'target-arrow-shape': 'triangle' 
+                  }
+                }
+              ],
+              elements: graph_dict,
+              
+     layout: {
+      name: 'dagre',
+      rankDir: 'LR'
+    },
+      //pan: { x: 600, y: 100 },
+  });
+
+</script>
+{% endblock %}

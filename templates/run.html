@@ -147,6 +147,7 @@
             {%if metrics_log|length>0%}
             <li ><a href="#"  onclick="show_tab('log_details')">Training Logs</a></li>
             {%endif%}
+            <li ><a href="#"  onclick="show_tab('XAI')">XAI</a></li>
             </ul>
             
         </aside>
@@ -545,6 +546,45 @@
           {%endif%}
           <!-- log_details DETAILS END-->
       <!-- CONTENT ENDS-->
+       <!-- XAI DETAILS START-->
+       {%if XAI!=""%}
+       <div id="XAI" style="display:none">
+         <h1 class="subtitle ">XAI </h1>
+         
+         <div class="columns">
+          
+             <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth" >
+               <thead>
+                 <tr>
+                   
+                   {%for col in XAI["table"]["columns"]%}
+                   <th>{{col}}</th>
+                   {%endfor%}
+                 </tr>
+               </thead>
+               <tbody>
+                   {%for log in  XAI["table"]["rows"]%}
+                   <tr>
+                     
+                     {%for col in log%}
+                     <td>{{col}}</td>
+                     {%endfor%}
+                   </tr>
+                   {%endfor%}
+               </tbody>
+             </table>
+           
+          
+         </div>
+         <div class="columns">
+           {{XAI['image']}}
+         </div>
+         
+       <!-- BREAK-->
+       </div>
+       {%endif%}
+       <!-- XAI DETAILS END-->
+   <!-- CONTENT ENDS-->
       </div>
     </section>
     
