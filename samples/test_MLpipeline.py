@@ -11,7 +11,7 @@ from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
 import time
 
-ppl=pipeline.Pipeline("IrisData")
+ppl=pipeline.PipeLine("IrisData")
 mlp=PyMLPipe()
 mlp.set_experiment("pipelinecheck")
 mlp.set_version(0.1)
@@ -53,12 +53,22 @@ def evaluate(data,model):
 
 n1=ppl.add_node("data", get_data,entry_node=True)
 for idx,model in enumerate([0,1]):
-    n2=ppl.add_node("model_train"+str(idx), train_model,node_input=["data"],args=[model])
-    n3=ppl.add_node("eval_train"+str(idx), evaluate,node_input=["data","model_train"+str(idx)])
+    ppl.add_node(
+        f"model_train{str(idx)}",
+        train_model,
+        input_nodes=["data"],
+        args={"model_name":model},
+    ) 
+    ppl.add_node(
+        f"eval_train{str(idx)}",
+        evaluate,
+        input_nodes=["data", f"model_train{str(idx)}"],
+    )
 
-    ppl.add_edge(n1, n2)
-    ppl.add_edge(n2, n3)
+    #ppl.add_edge(n1, n2)
+    #ppl.add_edge(n2, n3)
 
 #n1>>[n2,n3]
-ppl.register()
+ppl.register_dag()
+#ppl.run()
     

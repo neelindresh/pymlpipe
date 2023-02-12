@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from pymlpipe.tabular import PyMLPipe
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import  RandomForestClassifier
+from sklearn.ensemble import  RandomForestClassifier,AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score
@@ -87,3 +87,19 @@ with mlp.run():
     mlp.register_artifact("test.csv", testx,artifact_type="testing")
     mlp.scikit_learn.register_model("xgboost", model)
     mlp.explainer(model,trainx)   
+
+with mlp.run():
+    mlp.set_tags(["Classification","test run","xgb"])
+    model=AdaBoostClassifier()
+    model.fit(trainx, trainy)
+    predictions=model.predict(testx)
+    
+    mlp.log_metric("Accuracy", accuracy_score(testy,predictions))
+    mlp.log_metric("Precision", precision_score(testy,predictions,average='macro'))
+    mlp.log_metric("Recall", recall_score(testy,predictions,average='macro'))
+    mlp.log_metric("F1", f1_score(testy,predictions,average='macro'))
+    mlp.register_artifact("train.csv", trainx)
+    mlp.register_artifact("test.csv", testx,artifact_type="testing")
+    mlp.scikit_learn.register_model("adaboost", model)
+    mlp.explainer(model,trainx)   
+    

@@ -400,7 +400,7 @@ def runjobs(runid):
 def viewjobs(runid):
     #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
     all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
-    print(all_pipelines)
+    
     grapg_dict=change2graph.makegraph_pipeline(all_pipelines["graph"],all_pipelines["node_details"])
     nodes_logs={k:all_pipelines["node_details"][k]["log"] for k in all_pipelines["node_details"]}
     #nodes_logs={}
