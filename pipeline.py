@@ -264,6 +264,14 @@ class PipeLine:
         print("node", self._check_for_job_status(job_name,flag_variable_path))
         if not self._check_for_job_status(job_name,flag_variable_path):
             sys.exit()
+            
+        #RESET status    
+        for node_name in dag["node_details"]:
+            self.dag["node_details"][node_name]={"status":self.status_code[2],"start_time":"-","end_time":"-","log":""}
+        yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
+
+
+        # After RUn complete write status code
         self.bfs(dag["graph"],"root",node_info=dag["nodes"],dag_states=dag["args_map"])
         yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
 
