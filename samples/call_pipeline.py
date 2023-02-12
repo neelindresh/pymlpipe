@@ -1,5 +1,5 @@
 from pymlpipe import pipeline
 
-ppl=pipeline.Pipeline("IrisData")
+ppl=pipeline.PipeLine("IrisData")
 ppl.load_pipeline()
 ppl.run()

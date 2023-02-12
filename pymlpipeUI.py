@@ -267,7 +267,7 @@ def predict(hashno):
         }
     }
     if flask.request.method=="POST":
-        #data=flask.request.form['random_data']
+        
         data=flask.request.data
         dtype=None
         if "dtype" in data:
@@ -400,8 +400,10 @@ def runjobs(runid):
 def viewjobs(runid):
     #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
     all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
-    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["edges"],all_pipelines["sequence"],all_pipelines["node_details"])
+    print(all_pipelines)
+    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["graph"],all_pipelines["node_details"])
     nodes_logs={k:all_pipelines["node_details"][k]["log"] for k in all_pipelines["node_details"]}
+    #nodes_logs={}
     return flask.render_template("job_view.html",
                                  pipelinename=runid,
                                  grapg_dict=grapg_dict,
