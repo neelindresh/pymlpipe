@@ -8,7 +8,7 @@
 
 [![Downloads](https://pepy.tech/badge/pymlpipe/month)](https://pepy.tech/project/pymlpipe)
 
-![alt text](https://badgen.net/badge/version/0.2.6/red?icon=github)
+![alt text](https://badgen.net/badge/version/0.2.7/red?icon=github)
 
 ![](https://badgen.net/pypi/python/black)
 
@@ -22,23 +22,18 @@
 
 PyMLpipe is a Python library for ease Machine Learning Model monitoring and Deployment.
 
-  
-
 * Simple
-
 * Intuative
-
 * Easy to use
 
-  
+**What's New in 0.2.7**
+1. Explainable AI 
+3. Data Pipeline
+4. AutoML support
 
 Please Find the Full [documentation](https://neelindresh.github.io/pymlpipe.documentation.io/) here!
 
-  
-
 ## Installation
-
-  
 
 Use the package manager [pip](https://pypi.org/project/pymlpipe/) to install PyMLpipe.
 
@@ -251,7 +246,16 @@ mlp.register_artifact("train.csv", trainx)
 mlp.scikit_learn.register_model("logistic regression", model)
 ```
 
-  
+#### XAI
+
+To get model explaination , feature importance we can use `explainer()` 
+explainer takes two objects 
+- model - the model used for training
+- trainx - the training data
+
+```python
+mlp.explainer(model,trainx)
+```
 
 ## Quick Start (Scikit-Learn|XGBoost|LightGBM)
 
@@ -302,6 +306,8 @@ with mlp.run():
 	mlp.register_artifact("test", testx,artifact_type="testing")
 	# Save the model
 	mlp.scikit_learn.register_model("logistic regression", model)
+	# Model explainer 
+	mlp.explainer(model,trainx)
 ```
 
   
@@ -340,7 +346,10 @@ start_ui(host='0.0.0.0', port=8085)
 
 ![alt text](https://github.com/neelindresh/pymlpipe/blob/development/static/Screenshot%202022-07-04%20at%201.42.52%20PM.png?raw=true)
 
-  
+  ---
+XAI 
+
+![alt text](https://raw.githubusercontent.com/neelindresh/pymlpipe/dev/static/XAI.png)
 
 ---
 
