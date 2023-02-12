@@ -155,7 +155,7 @@ class PipeLine:
         return cloudpickle.load(open(loader_path,'rb'))
     
     def load_pipeline(self):
-        """_summary_: Load pipeline 
+        """_summary_: Load pipeline from specific location
         """
         dag=yamlio.read_yaml(os.path.join(self.pipeline_path,self.pipeline_name,f'{self.pipeline_name}.yaml'))
         self.dag=dag
