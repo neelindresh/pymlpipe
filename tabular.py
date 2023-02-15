@@ -162,9 +162,20 @@ class PyMLPipe:
         self.context_manager.write_to_yaml(self.info)
         self.__reset__()
     def explainer(self,model,trainx):
+        """_summary_: This is an explainer API that do global explainibilty. 
+
+        Args:
+            model (scikit-learn): Model Object
+            trainx (Pandas DataFrame): Data Frame for Global Explainability
+
+        Raises:
+            TypeError: _description_
+        """
         if not isinstance(trainx, pd.DataFrame):
             raise TypeError("Error: Please provide a valid data pd.Dataframe or correct artifact Name")
-        
+        model_type=str(type(model))
+        if ('sklearn' not in model_type) and ("catboost" not in model_type):
+            raise TypeError("Error: Scikit-learn or Catboost or Xgboost Expected got {model_type}".format(model_type=model_type) )
         explainer_instance=xai.Explainer(model,trainx,self.context_manager.folders["artifacts"])
         artifacts=explainer_instance.explain()
         self.info["XAI"]=artifacts

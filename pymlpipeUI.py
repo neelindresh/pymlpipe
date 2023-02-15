@@ -10,11 +10,11 @@ import numpy as np
 import json
 import uuid
 from datetime import datetime
-from flaskwebgui import FlaskUI
+
 import pandas as pd
 
 app = FlaskAPI(__name__)
-ui = FlaskUI(app)
+
 
 BASE_DIR=os.getcwd()
 MODEL_FOLDER_NAME="modelrun"
@@ -169,14 +169,15 @@ def runpage(run_id):
         XAI_temp=run_details["XAI"]
         XAI_feature_map=pd.read_csv(XAI_temp["feature_explainer"])
         XAI_feature_map=XAI_feature_map.round(3)
+        print(XAI_temp)
         XAI={
             "table":{
                 "columns":XAI_feature_map.columns,
                 "rows":XAI_feature_map.values
             },
-            "image": flask.Markup(open(XAI_temp["shap"]).read())
+            "image": flask.Markup(open(XAI_temp["shap"]).read()) if XAI_temp["shap"]!="" else ""
         }
-        print(XAI_feature_map.values)
+        #print(XAI_feature_map.values)
     return flask.render_template('run.html',
                                  run_id=run_id,
                                  experiments=experiments,
@@ -266,7 +267,7 @@ def predict(hashno):
         }
     }
     if flask.request.method=="POST":
-        #data=flask.request.form['random_data']
+        
         data=flask.request.data
         dtype=None
         if "dtype" in data:
@@ -399,8 +400,10 @@ def runjobs(runid):
 def viewjobs(runid):
     #all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,QUEUE_NAME))
     all_pipelines=yamlio.read_yaml(os.path.join(PIPELINE_DIR,runid,runid+".yaml"))
-    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["edges"],all_pipelines["sequence"],all_pipelines["node_details"])
+    
+    grapg_dict=change2graph.makegraph_pipeline(all_pipelines["graph"],all_pipelines["node_details"])
     nodes_logs={k:all_pipelines["node_details"][k]["log"] for k in all_pipelines["node_details"]}
+    #nodes_logs={}
     return flask.render_template("job_view.html",
                                  pipelinename=runid,
                                  grapg_dict=grapg_dict,
@@ -429,12 +432,6 @@ def start_ui(host=None,port=None,debug=False):
         app.run(host=host,port=port,debug=debug)
         
         
-    
-def start_gui():
-    """
-    Start gui server
-    """
-    ui.run()
 
 if __name__ == '__main__':
     app.run()

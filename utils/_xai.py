@@ -87,19 +87,36 @@ class Explainer():
     def explain(self):
         model_class=type(self.model)
         model_name=type(self.model).__name__
-        print(self.data)
+        flag=False
         if model_name in XAI_MAP["LinearModels"]:
             self.coef_based_feature_importance(self.model,np.std(self.data,0),self.feature_map,os.path.join(self.artifact_path,"explainer"))
-            self.tree_linear_summary_plot(self.model,self.data,self.feature_map,os.path.join(self.artifact_path,"explainer"))
+            try:
+                self.tree_linear_summary_plot(self.model,self.data,self.feature_map,os.path.join(self.artifact_path,"explainer"))
+            except Exception as e:
+                flag=True
+                print("Warning:Instance of model {model} not supported".format(model=model_name))
             
         elif model_name in XAI_MAP["TreeBasedModels"]:
             self.tree_based_feature_importance(self.model,self.feature_map,os.path.join(self.artifact_path,"explainer"))
-            self.tree_expainer_summary_plot(self.model,self.data,self.feature_map,os.path.join(self.artifact_path,"explainer"))
+            try:
+                self.tree_expainer_summary_plot(self.model,self.data,self.feature_map,os.path.join(self.artifact_path,"explainer"))
+            except Exception as e:
+                flag=True
+                print("Warning: Instance of model {model} not supported".format(model=model_name))
+            
         else:
             #implement XAI for NeuralNetworks
             pass
-        return {"feature_explainer":os.path.join(self.artifact_path,"explainer.csv"),"shap":os.path.join(self.artifact_path,"explainer.svg")}
-    
+        if not flag:
+            return {
+                "feature_explainer":os.path.join(self.artifact_path,"explainer.csv"),
+                "shap":os.path.join(self.artifact_path,"explainer.svg")
+                }
+        else:
+            return {
+                "feature_explainer":os.path.join(self.artifact_path,"explainer.csv"),
+                "shap":""
+            }
 
     def tree_expainer_summary_plot(self,model,xtrain,feature_map,fig_name):
         shap_xgb_explainer = shap.TreeExplainer(model)

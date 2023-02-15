@@ -1,10 +1,14 @@
-import dill
+
 import cloudpickle
 from pymlpipe.utils import database,yamlio
 import os
 import datetime
 import traceback,sys
-#checking
+import inspect
+##---To Be moved into separate file--##
+
+__FOLDER__="ML_pipelines"
+
 
 class Node:
     def __init__(self,name, func,path):
@@ -12,285 +16,264 @@ class Node:
         self.func=func
         self.path=path
         self.save(name, func)
-        
-    def save(self,name,func):
-        #mainify(func)
-        #dill.dump(func, open(name+".pkl", "wb"))
-        
-        self.filename=os.path.join(self.path,name+".mld")
-        cloudpickle.dump(func, open(self.filename, "wb"))
-        
-    
-class Pipeline:
-    def __init__(self,name):
-        path=os.getcwd()
-        self.PIPELINE_FOLDER="ML_pipelines"
-        database.create_folder(path)
-        self.name = name
-        self.base_path=database.create_folder(path,self.PIPELINE_FOLDER)
-        self.path_pipe=database.create_folder(self.base_path,self.name)
-        
-        self.dag={"sequence":[],"nodes":{},"edges":[],"node_order":{},"node_details":{}}
-        self.sequence=[]
-        self.node_order={}
-        self.is_entry_node=False
-        
-    def _make_edges(self,node,edges):
-        """Create the DAG edges for the nodes, in a src--> trg format
+
+    def save(self,name: str,func) -> None:
+        """_summary_: Saves a python Function into Mould file
 
         Args:
-            node (_type_): _description_
-            edges (_type_): _description_
-
-        Returns:
-            _type_: _description_
+            name (str): Name of the function
+            func (Object): Actual python function
         """
-        edge_list=[]
-        for edge in edges:
-            edge_list.append({"src":edge,"target":node})
-        return edge_list
-    
-    
-    def add_node(self,name,func,node_input=None,entry_node=False,args=None):
-        if name in self.sequence:
-            raise ValueError(f"Node Name {name} already exists! Please provide different Name")
-        self.sequence.append(name)
-        node=Node(name,func,self.path_pipe)
-        self.dag["nodes"][name]={"path":node.filename,"mould_file":node.name+".mld","entry":entry_node,"args":args,"folder":self.PIPELINE_FOLDER,"subfolder":self.name,}
-        self.dag["node_details"][name]={"status":"Queued","start_time":"-","end_time":"-","log":""}
+
+        self.name_of_file = f"{self.name}.mld"
+        self.filename=os.path.join(self.path,self.name_of_file)
+        cloudpickle.dump(func, open(self.filename, "wb"))
+
+class PipeLine:
+    def __init__(self,pipeline_name,pipeline_path=None):
+        self.path=os.getcwd()
+        self.pipeline_name=pipeline_name
+        self.pipeline_path = __FOLDER__ if pipeline_path is None else pipeline_path
+        database.create_folder(self.path)
+        self.base_path=database.create_folder(self.path,self.pipeline_path)
+        self.path_pipe=database.create_folder(self.base_path,self.pipeline_name)
+
+        self.dag={"nodes":{},"graph":{},"args_map":{},"node_details":{}}
+        self.status_code={0:"Started",1:"Completed",2:"Queued",3:"Failed"}
+        self._args_tag="args@"
+
+    def add_node(self,node_name:str,function,input_nodes:list =None,args:dict=None,entry_node:bool=False) -> None:
+        """_summary_
+
+        Args:
+            node_name (str): Name of the node
+            function (_type_): Python function you want to execute
+            input_nodes (list, optional): List of nodes that are connected to this node. The connected nodes should return a value which will act as an input to the node . Defaults to None.
+            entry_node (bool, optional): boolean flag indicating if this is the starting node(first node). Defaults to False.
+            args (list, optional): Run time arguments . Defaults to None.
+
+        Raises:
+            ValueError: _description_
+            TypeError: _description_
+            TypeError: _description_
+            TypeError: _description_
+        """
+        '''Exception Start'''
+        if entry_node and "root" in self.dag["graph"]:
+            raise ValueError("Error!!! entry_node is already set. Two nodes cannot be Entry Node in DAG.")
+        if input_nodes != None and not isinstance(input_nodes,list):
+            raise TypeError(
+                f"Error!!! 'input_node' expected to be type:list got {type(input_nodes)}"
+            )
+        if not isinstance(entry_node,bool):
+            raise TypeError(
+                f"Error!!! 'entry_node' expected to be type:bool got {type(input_nodes)}"
+            )
+        if not isinstance(node_name,str):
+            raise TypeError(
+                f"Error!!! 'node_name' expected to be type:str got {type(input_nodes)}"
+            )
+
+        '''Exception End'''
+
+
+        node=Node(node_name,function,self.path_pipe)
+        self.dag["nodes"][node_name]={
+            'filename':node.name_of_file,
+            'root_path':self.pipeline_path,
+            'sub_path':self.pipeline_name,
+            "edge_nodes":input_nodes,
+            "args":args
+        }
+
+        _arg_names=inspect.getfullargspec(function).args
+        ## Mapping args to the input node
+        if args !=None:
+            for arg_name in _arg_names:
+                if arg_name in args:
+                    input_nodes.append(f"{self._args_tag}{arg_name}")
+        _mapper = dict(zip(input_nodes,_arg_names)) if len(_arg_names)!=0 else {}
+        #print("_mapper:",_mapper)
+        self.dag["args_map"][node_name]=_mapper
         if entry_node:
-            self.is_entry_node=True
-        if node_input!=None:
-            self.node_order[name]=node_input
-        return node
+            self.dag["graph"]["root"]=[node_name]
+        else:
+            for ipnode in input_nodes:
+                if ipnode.startswith(self._args_tag):
+                    continue
+                if ipnode in self.dag["graph"]:
+                    self.dag["graph"][ipnode].append(node_name)
+                else:
+                    self.dag["graph"][ipnode]=[node_name]
+        if node_name not in self.dag["graph"]:
+            self.dag["graph"][node_name]=[]
+        self.dag["node_details"][node_name]={"status":self.status_code[2],"start_time":"-","end_time":"-","log":""}
+
+
+    def register_dag(self):
+        """_summary_: Registers the pipeline as an Dag Object
+        """
+        path_to_yaml=self.path_pipe
+        file_name = f"{self.pipeline_name}.yaml"
         
-    def load(self,name):  
-        #return dill.load(open(name+".pkl", "rb"))
-        #return cloudpickle.load(open(os.path.join(self.path_pipe,self.name+".yaml"), "rb"))
-        return cloudpickle.load(open(name,'rb'))
-    
-    
-    def add_edge(self,node_1,node_2):
-        if not isinstance(node_1,Node) and isinstance(node_2,Node):
-            raise TypeError("node_1 or node_2 is not type Node")
-        self.dag["edges"].append({"src":node_1.name,"target":node_2.name})
-        
-    
-    def register(self):
-        already_exist=False
-        exists_idx=None
-        if not self.is_entry_node:
-            raise ValueError("Entry Node is not defined!!! Please 'entry_node'=True for the starting node")
-        self.dag["sequence"]=self.sequence
-        self.dag["node_order"]=self.node_order
-        #self.dag["graph"]=
-        graph={}
-        '''
-        for seq in self.sequence:
-            if seq in graph:
-                graph[seq].append([{"edges":i,"status":None} for i in self.dag["edges"] if i["src"]==seq])
-            else:
-                graph[seq]=[{"edges":i,"status":None} for i in self.dag["edges"] if i["src"]==seq]
-        print(graph)
-        '''
         data=yamlio.read_yaml(os.path.join(self.base_path,"info.yaml"))
+        info={
+                "pipelinename":self.pipeline_name,
+                "folder":self.pipeline_path,
+                "subfolder":self.pipeline_name,
+                "created_at":  datetime.datetime.now(),
+                "status":"-",
+                "jobtime":"",
+                "jobtime":"-"
+            }
+        already_exist=False
         
         for idx,d in enumerate(data):
-            if d["pipelinename"]==self.name:
+            if d["pipelinename"]==self.pipeline_name:
                 already_exist=True
                 exists_idx=idx
+        
         if not already_exist:
-            data.append({
-                "pipelinename":self.name,
-                "path":self.path_pipe,
-                "folder":self.PIPELINE_FOLDER,
-                "subfolder":self.name,
-                "created_at":  datetime.datetime.now(),
-                "status":"-",
-                "jobtime":"",
-                "jobtime":"-"
-            })
+            data.append(info)
         else:
-            data[idx].update({
-                "pipelinename":self.name,
-                "path":self.path_pipe,
-                "folder":self.PIPELINE_FOLDER,
-                "subfolder":self.name,
-                "created_at":  datetime.datetime.now(),
-                "status":"-",
-                "jobtime":"",
-                "jobtime":"-"
-            })
+            data[idx].update(info)
+        
             
         yamlio.write_to_yaml(os.path.join(self.base_path,"info.yaml"), data)
-        yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"), self.dag)
+        yamlio.write_to_yaml(os.path.join(path_to_yaml,file_name),self.dag)
+
+    def __load__mld_file(self,info:dict)->object:
+        """_summary_: Load Mould File with all the injected dependencies 
+
+        Args:
+            info (dict): dictinary containing the location of the mould file
+
+        Returns:
+            object: returns a python object
+        """
+        loader_path=os.path.join(self.path,info["root_path"],info["sub_path"],info['filename'])
+        return cloudpickle.load(open(loader_path,'rb'))
     
     def load_pipeline(self):
-        self.dag=yamlio.read_yaml(os.path.join(self.path_pipe,self.name+".yaml"))
-    
-    def _find_next_node(self,node_name):
-        return self.dag["graph"][node_name]
-    
-    def _create_graph(self,edges):
-        graph={}
-        for edge in edges:
-            if edge["src"] in graph:
-                graph[edge["src"]].append(edge["target"])
+        """_summary_: Load pipeline from specific location
+        """
+        dag=yamlio.read_yaml(os.path.join(self.pipeline_path,self.pipeline_name,f'{self.pipeline_name}.yaml'))
+        self.dag=dag
+        
+        
+        
+        
+    def _get_input_for_func(self,dag_states:dict,node_dict:dict,out_put_nodes:dict)-> dict:
+        """_summary_: get the inputs for each node
+
+        Args:
+            dag_states (dict): contains mapped variable  <function_nam>: <arg_name> [the <arg_name> is the argument name as defined in the function] 
+            out_put_nodes (dict): contains the previous outputs for the functions that have completed running
+            node_info (dict): dictinary containing the location of the mould file and input nodes connected to the given node
+
+        Returns:
+            dict: returns a dictionary for  <arg_name>: <prev_output> mapping that can be used in the next node
+        """
+        # sourcery skip: assign-if-exp, reintroduce-else, swap-if-expression
+        
+        ##if no args are there
+        
+        if not dag_states: return dag_states
+        input_dict={}
+        for func_name_,map_name_ in dag_states.items():
+            ##if there are any external arguments  
+            if not func_name_.startswith(self._args_tag):
+                input_dict[map_name_]=out_put_nodes[func_name_]
             else:
-                graph[edge["src"]]=[edge["target"]]
-        return graph
-    def _make_previous_output(self,_prev_outputs,neighbor,functions_args):
-        inp=[]
-        #print(functions_args)
-        for n in neighbor:
-            #when output --> tuple,list
-            if isinstance(_prev_outputs[n], tuple) or isinstance(_prev_outputs[n], list):
-                inp.extend(list(_prev_outputs[n]))
-               
-                if functions_args!=None:
-                    inp.extend(functions_args)
-            #make output --> dict
-            else: # or isinstance(_prev_outputs[n], str) or isinstance(_prev_outputs[n], int) or isinstance(_prev_outputs[n], float):
-                inp.append(_prev_outputs[n])
-                
-                if functions_args!=None:
-                    inp.extend(functions_args)
-            #make output --> str,float,int
-            
-        #print("input-->",inp)
-        return inp
+                input_dict[map_name_]=node_dict["args"][map_name_]
+        return input_dict
         
-    def _change_status(self,node,status,info=None):
-        dag=yamlio.read_yaml(os.path.join(self.path_pipe,self.name+".yaml"))
-        if status=="Started":
-            
-            dag["node_details"][node]["status"]=status
-            
-            dag["node_details"][node]["start_time"]=str(datetime.datetime.now())
-            dag["node_details"][node]["log"]="======"+status.upper()+"======"+str(datetime.datetime.now())+"\n"
-        elif status=="Completed" or status=="Failed":
-            dag["node_details"][node]["status"]=status
-            dag["node_details"][node]["end_time"]=str(datetime.datetime.now())
-            dag["node_details"][node]["log"]+="======"+status.upper()+"======"+str(datetime.datetime.now())+"\n"
-            if info!=None:
-                dag["node_details"][node]["log"]+="\n"+str(info)+"======"
-                
-                
-        dag=yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"),dag)
-    def bfs(self,graph,entry_node,_prev_outputs,_functions,_node_order,functions_args,job_name,flag_variable_path):
-        visited = [entry_node] # List to keep track of visited nodes.
-        queue = [entry_node]     #Initialize a queue
-        while queue:
-            s = queue.pop(0) 
-            
-            if s in graph:
-                for neighbour in graph[s]:
-                    if neighbour not in visited:
-                        func=_functions[neighbour]
-                        self._change_status(neighbour,"Started")
-                        if not self._check_for_job_status(job_name,flag_variable_path): sys.exit() 
-                        #print(self._make_previous_output(_prev_outputs,_node_order[neighbour]))
-                        try:
-                            _prev_outputs[neighbour]=func(*self._make_previous_output(_prev_outputs,_node_order[neighbour],functions_args[neighbour]))
-                            
-                            self._change_status(neighbour,"Completed")
-                            
-                        #func()
-                        except Exception as e:
-                            #print(neighbour)
-                            print(traceback.format_exc())
-                            #raceback.print_exception(*sys.exc_info())
-                            self._change_status(neighbour,"Failed",info=traceback.format_exc())
-                        
-                        visited.append(neighbour)
-                        queue.append(neighbour)
-        return _prev_outputs
     
-    def _get_path(self,base_path,folder):
-        return os.path.join(base_path,folder)
-        
-        
-    def run(self,*args,**kwargs):
-        if len(self.dag["sequence"])==0:
-            raise ValueError("Error!!! No Dag Provided!!!!")
-        #if not self.is_entry_node:
-        #    raise ValueError("Error!!! Entry Node Not defined please provide and entry node with entry_node=True!!!!")
-        entrynode=[]
-        functions={}
-        output_nodes={}
-        functions_args={}
-        for node in self.dag["nodes"]:
-            #print(node,self.dag["nodes"][node])
-            if self.dag["nodes"][node]["entry"]:
-                entrynode.append(node)
-            functions[node]=self.load(self._get_path(self.path_pipe, self.dag["nodes"][node]["mould_file"]))#self.dag["nodes"][node]["path"])
-            functions_args[node]=self.dag["nodes"][node]["args"]
-        graph=self._create_graph(self.dag["edges"])
-        self.dag["node_details"]={node:{"status":"Queued","start_time":"-","end_time":"-","log":""} for node in self.dag["node_details"]}
-        yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"), self.dag)
-        for node in entrynode:
-            func=functions[node]
-            self._change_status(node,"Started")
-            try:
-                print("node", node)
-                output_nodes[node]=func(*args,**kwargs)
-                self._change_status(node,"Completed")
-            except Exception as e:
-                print(node)
-                
-                traceback.print_exception(*sys.exc_info())
-                self._change_status(node,"Failed")
-            output_nodes=self.bfs(graph,node,output_nodes,functions,self.dag["node_order"],functions_args)
-        return output_nodes
+    def __change_status__(self,status:str,node_name:str,log:str=None):
+        """_summary_: Change Node status
+
+        Args:
+            status (str): What is the status for the Node
+            node_name (str): Name of the Node
+            log (str, optional): Any Log files to be added. Defaults to None.
+        """
+        if status==0:
+            self.dag["node_details"][node_name] = {
+                "start_time": str(datetime.datetime.now()),
+                "log": f"======{self.status_code[status].upper()}======{str(datetime.datetime.now())}\n",
+                "status":self.status_code[status]
+            }
+        elif status in {1, 3}:
+            self.dag["node_details"][node_name] = {
+                "end_time": str(datetime.datetime.now()),
+                "log": f"======{self.status_code[status].upper()}======{str(datetime.datetime.now())}\n",
+                "status":self.status_code[status]
+
+            }
+            if log!=None:
+                self.dag["node_details"][node_name]["log"] += "\n" + log + "======"
+            
     def _check_for_job_status(self,jobname,queue_name):
         all_jobs=yamlio.read_yaml(queue_name)
         status=[j["status"] for j in all_jobs if j["pipelinename"]==jobname]
-        return False if status[0]=="Stopped" else True
-    def run_serialized(self,flag_variable_path,job_name,*args,**kwargs):
-        if len(self.dag["sequence"])==0:
-            raise ValueError("Error!!! No Dag Provided!!!!")
-        #if not self.is_entry_node:
-        #    raise ValueError("Error!!! Entry Node Not defined please provide and entry node with entry_node=True!!!!")
-        entrynode=[]
-        functions={}
-        output_nodes={}
-        functions_args={}
-        for node in self.dag["nodes"]:
-            #print(node,self.dag["nodes"][node])
-            if self.dag["nodes"][node]["entry"]:
-                entrynode.append(node)
-            functions[node]=self.load(self._get_path(self.path_pipe, self.dag["nodes"][node]["mould_file"]))#self.dag["nodes"][node]["path"])
-            functions_args[node]=self.dag["nodes"][node]["args"]
-        graph=self._create_graph(self.dag["edges"])
-        self.dag["node_details"]={node:{"status":"Queued","start_time":"-","end_time":"-","log":""} for node in self.dag["node_details"]}
-        yamlio.write_to_yaml(os.path.join(self.path_pipe,self.name+".yaml"), self.dag)
-        for node in entrynode:
-            func=functions[node]
-            self._change_status(node,"Started")
-            try:
-                print("node", node,self._check_for_job_status(job_name,flag_variable_path))
-                if not self._check_for_job_status(job_name,flag_variable_path):
-                    sys.exit()
-                output_nodes[node]=func(*args,**kwargs)
-                self._change_status(node,"Completed")
-            except Exception as e:
-                print(node)
-                
-                traceback.print_exception(*sys.exc_info())
-                self._change_status(node,"Failed")
-            output_nodes=self.bfs(graph,node,output_nodes,functions,self.dag["node_order"],functions_args,job_name,flag_variable_path)
-        return output_nodes
-            
-            
-            
-            
-        
-        
-                
-        
-            
-        
-            
-        
-        
+        return status[0] != "Stopped"
+    
+    
+    def bfs(self, graph:dict, entry_node:str,node_info:dict,dag_states:dict): #function for BFS
+        """_summary_: Breadth-first search 
 
+        Args:
+            graph (dict): contains DAG structure of the nodes "root" is the starting node {root : [nodeA],nodeA :[nodeB, nodeC]}
+            entery_node (str): the entry node is the "root" node
+            node_info (dict): dictinary containing the location of the mould file and input nodes connected to the given node
+            dag_states (dict): ontains mapped variable  <function_nam>: <arg_name> [the <arg_name> is the argument name as defined in the function] 
+        """
+        
+        visited = [entry_node] # List for visited nodes.
+        queue = [entry_node]
+        
+        output_list={}
+        while queue:          # Creating loop to visit each node
+            m = queue.pop(0)
+            for neighbour in graph[m]:
+                if neighbour not in visited:
+                    try:
+                        print("Node-->",neighbour)
+                        function_=self.__load__mld_file(node_info[neighbour])
+                    
+                        output_list[neighbour]=function_(**self._get_input_for_func(dag_states[neighbour],node_info[neighbour],output_list))
+                        self.__change_status__(1,neighbour)
+                    except Exception as e:
+                        print(traceback.format_exc())
+                        self.__change_status__(3,neighbour,traceback.format_exc())
+                    
+                    visited.append(neighbour)
+                    queue.append(neighbour)
+                    
+                    
+    
+    def run(self):
+         #Initialize a queue
+        dag=self.dag
+        self.bfs(dag["graph"],"root",node_info=dag["nodes"],dag_states=dag["args_map"])
+        yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
+
+    def run_serialized(self,flag_variable_path,job_name):
+         #Initialize a queue
+        dag=self.dag
+        print("node", self._check_for_job_status(job_name,flag_variable_path))
+        if not self._check_for_job_status(job_name,flag_variable_path):
+            sys.exit()
+            
+        #RESET status    
+        for node_name in dag["node_details"]:
+            self.dag["node_details"][node_name]={"status":self.status_code[2],"start_time":"-","end_time":"-","log":""}
+        yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
+
+
+        # After RUn complete write status code
+        self.bfs(dag["graph"],"root",node_info=dag["nodes"],dag_states=dag["args_map"])
+        yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
+
+    def __get_dag__(self):
+        return self.dag
