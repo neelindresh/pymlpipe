@@ -249,6 +249,7 @@ class PipeLine:
                     
                     visited.append(neighbour)
                     queue.append(neighbour)
+                    yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
                     
                     
     
@@ -273,7 +274,7 @@ class PipeLine:
 
         # After RUn complete write status code
         self.bfs(dag["graph"],"root",node_info=dag["nodes"],dag_states=dag["args_map"])
-        yamlio.write_to_yaml(os.path.join(self.path_pipe,f"{self.pipeline_name}.yaml"),self.dag)
+        
 
     def __get_dag__(self):
         return self.dag

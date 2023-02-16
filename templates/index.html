@@ -69,15 +69,16 @@
     function checkmetric(id)
     {   
         //console.log(id)
-        console.log(document.getElementById("checkbox_"+id).checked)
+        console.log(document.getElementById("checkbox_@_"+id).checked,id)
         //document.getElementById(id).checked) 
-        if(document.getElementById("checkbox_"+id).checked){
-            id=id.split("_")[1]
+        if(document.getElementById("checkbox_@_"+id).checked){
+            id=id.split("@")[1]
+            console.log(id)
             metrics.push(id)
             //document.getElementById("checkbox_"+id).setAttribute('checked', 'checked')
         }
         else{
-            index = metrics.indexOf(id.split("_")[1]);
+            index = metrics.indexOf(id.split("@")[1]);
             if (index > -1) {
                 metrics.splice(index, 1); // 2nd parameter means remove one item only
               }
@@ -364,7 +365,7 @@
                         {%for metric in exp_wise_metrics[experiment]%}
                             <th>
                                 <div>
-                                    <input type="checkbox" onclick="checkmetric('{{experiment}}_{{metric}}')" id="checkbox_{{experiment}}_{{metric}}">
+                                    <input type="checkbox" onclick="checkmetric('{{experiment}}@{{metric}}')" id="checkbox_@_{{experiment}}@{{metric}}">
                                 
                                 <div>
                                 {{metric}}
