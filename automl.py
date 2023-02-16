@@ -56,186 +56,186 @@ class AutoMLPipe():
         self.explain=explain
         self.tags=tags
         self.classification_models={
-                'log_reg': LogisticRegression(),
-                'adac':AdaBoostClassifier(),
-                'bagc': BaggingClassifier(),
-                'etc' : ExtraTreesClassifier(),
-                'gbc' : GradientBoostingClassifier(),
-                'rfc': RandomForestClassifier(),
-                'dtc': DecisionTreeClassifier(),
-                'rc': RidgeClassifier(),
-                'sgdc':SGDClassifier(),
-                'pac':PassiveAggressiveClassifier(),
-                'svc': LinearSVC(),
-                'mlpc': MLPClassifier(),
-                'xgbc': XGBClassifier(n_jobs=-1),
-                'lgbmc': LGBMClassifier(n_jobs=-1),
-                'cbc': CatBoostClassifier()}
+                'LogisticRegression': LogisticRegression(),
+                'AdaBoostClassifier':AdaBoostClassifier(),
+                'BaggingClassifier': BaggingClassifier(),
+                'ExtraTreesClassifier' : ExtraTreesClassifier(),
+                'GradientBoostingClassifier' : GradientBoostingClassifier(),
+                'RandomForestClassifier': RandomForestClassifier(),
+                'DecisionTreeClassifier': DecisionTreeClassifier(),
+                'RidgeClassifier': RidgeClassifier(),
+                'SGDClassifier':SGDClassifier(),
+                'PassiveAggressiveClassifier':PassiveAggressiveClassifier(),
+                'LinearSVC': LinearSVC(),
+                'MLPClassifier': MLPClassifier(),
+                'XGBClassifier': XGBClassifier(n_jobs=-1),
+                'LGBMClassifier': LGBMClassifier(n_jobs=-1),
+                'CatBoostClassifier': CatBoostClassifier()}
         self.regression_models={
-            'lr': LinearRegression(),
-            'svr' : SVR(),
-            'adar' : AdaBoostRegressor(),
-            'dtr' : DecisionTreeRegressor(),
-            'lasso' : Lasso(),
-            'ridge' : Ridge(),
-            'mlpr' : MLPRegressor(),
-            'rfr' : RandomForestRegressor(),
-            'etr' : ExtraTreesRegressor(),
-            'gbr' : GradientBoostingRegressor(),
-            'bagr' : BaggingRegressor(),
-            'enet' : ElasticNet(),
-            'par': PassiveAggressiveRegressor(),
-            'bay' : BayesianRidge(),
-            'hubr' : HuberRegressor(),
-            'poi' : PoissonRegressor(),
-            'xgbr': XGBRegressor(n_jobs=-1),
-            'lgbmr': LGBMRegressor(n_jobs=-1),
-            'cbr': CatBoostRegressor()
+            'LinearRegression': LinearRegression(),
+            'SVR' : SVR(),
+            'AdaBoostRegressor' : AdaBoostRegressor(),
+            'DecisionTreeRegressor' : DecisionTreeRegressor(),
+            'Lasso' : Lasso(),
+            'Ridge' : Ridge(),
+            'MLPRegressor' : MLPRegressor(),
+            'RandomForestRegressor' : RandomForestRegressor(),
+            'ExtraTreesRegressor' : ExtraTreesRegressor(),
+            'GradientBoostingRegressor' : GradientBoostingRegressor(),
+            'BaggingRegressor' : BaggingRegressor(),
+            'ElasticNet' : ElasticNet(),
+            'PassiveAggressiveRegressor': PassiveAggressiveRegressor(),
+            'BayesianRidge' : BayesianRidge(),
+            'HuberRegressor' : HuberRegressor(),
+            'PoissonRegressor' : PoissonRegressor(),
+            'XGBRegressor': XGBRegressor(n_jobs=-1),
+            'LGBMRegressor': LGBMRegressor(n_jobs=-1),
+            'CatBoostRegressor': CatBoostRegressor()
 
         }
-        self.explain_exclude=['adac','bagc','gbc','mlpc','svc','adar','bagr','svr','mlpr']
+        self.explain_exclude=['AdaBoostClassifier','BaggingClassifier','GradientBoostingClassifier','MLPClassifier','LinearSVC','AdaBoostRegressor','BaggingRegressor','SVR','MLPRegressor']
         self.param_grid=dict()
-        self.param_grid['log_reg']={
+        self.param_grid['LogisticRegression']={
             'penalty': ['l1','l2'],
             'C': [0.1,1],
             'solver': ['liblinear', 'newton-cg'],
         }
-        self.param_grid['pac']={
+        self.param_grid['PassiveAggressiveClassifier']={
             'C': [0.01,0.1,1],
 
         }
-        self.param_grid['par']={
+        self.param_grid['PassiveAggressiveRegressor']={
             'C': [0.1,0.5,1],
 
         }
-        self.param_grid['rc']={
+        self.param_grid['RidgeClassifier']={
             'alpha':[0.01,0.1,1],
             'solver': ['auto','sag','cholesky']
         }
-        self.param_grid['sgdc']={
+        self.param_grid['SGDClassifier']={
             'loss': ['hinge','log_loss', 'modified_huber','squared_error'],
             'penalty': ['l1','l2']
         }
-        self.param_grid['dtc']={
+        self.param_grid['DecisionTreeClassifier']={
             'criterion': ['gini','entropy'],
             'max_depth': [None,2,3],
             'min_samples_split': [2,3,4]
         }
-        self.param_grid['adac']={
+        self.param_grid['AdaBoostClassifier']={
             'n_estimators': [10,100,500],
             'learning_rate': [0.01,0.1,1],
         }
-        self.param_grid['bagc']={
+        self.param_grid['BaggingClassifier']={
             'n_estimators': [10,100,500],
         }
-        self.param_grid['bagr']={
+        self.param_grid['BaggingRegressor']={
             'n_estimators': [10,100,500],
         }
-        self.param_grid['etc']={
-            'n_estimators': [10,100,500],
-            'max_depth': [None,2,3],
-            'min_samples_split': [2,3,4]
-        }
-        self.param_grid['etr']={
+        self.param_grid['ExtraTreesClassifier']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'min_samples_split': [2,3,4]
         }
-        self.param_grid['gbc']={
+        self.param_grid['ExtraTreesRegressor']={
+            'n_estimators': [10,100,500],
+            'max_depth': [None,2,3],
+            'min_samples_split': [2,3,4]
+        }
+        self.param_grid['GradientBoostingClassifier']={
             'n_estimators': [10,100,500],
             'learning_rate': [0.01,0.1],
             'criterion': ['friedman_mse','squared_error']
         }
-        self.param_grid['gbr']={
+        self.param_grid['GradientBoostingRegressor']={
             'n_estimators': [10,100,500],
             'learning_rate': [0.01,0.1],
             'criterion': ['friedman_mse','squared_error']
         }
-        self.param_grid['rfc']={
+        self.param_grid['RandomForestClassifier']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'min_samples_split': [2,3,4]
         }
-        self.param_grid['rfr']={
+        self.param_grid['RandomForestRegressor']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'min_samples_split': [2,3,4]
         }
-        self.param_grid['svc']={
+        self.param_grid['LinearSVC']={
             'loss': ['hinge','log_loss', 'modified_huber','squared_error'],
             'C': [0.1,0.5,1]
         }
-        self.param_grid['mlpc']={
+        self.param_grid['MLPClassifier']={
             'activation': ['tanh','relu'],
             'solver': ['sgd','adam']
         }
-        self.param_grid['mlpr']={
+        self.param_grid['MLPRegressor']={
             'activation': ['tanh','relu'],
             'solver': ['sgd','adam']
         }
-        self.param_grid['lr']={
+        self.param_grid['LinearRegression']={
                 'n_jobs' : [-1]
             }
-        self.param_grid['svr']={
+        self.param_grid['SVR']={
             'kernel' : ['linear', 'poly', 'rbf', 'sigmoid']
             ,'gamma' : ['scale','auto']
             , 'C': [0.1,0.5,1]
         }
-        self.param_grid['adar']={
+        self.param_grid['AdaBoostRegressor']={
             'n_estimators': [10,100,500],
             'learning_rate': [0.01,0.1,1],
             'loss' : ['linear','square','exponential']
         }
-        self.param_grid['dtr']={
+        self.param_grid['DecisionTreeRegressor']={
             #'criterion': ['gini','entropy'],
             'splitter' : ['best'],
             'max_depth': [None,2,3],
             'min_samples_split': [2,3,4]
         }
-        self.param_grid['lasso']={
+        self.param_grid['Lasso']={
             'selection' : ['cyclic', 'random']
         }
-        self.param_grid['ridge']={
+        self.param_grid['Ridge']={
             'solver' : ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga']
         }
-        self.param_grid['poi']={
+        self.param_grid['PoissonRegressor']={
             'alpha': [0.5,1,1.5]
         }
-        self.param_grid['hubr']={
+        self.param_grid['HuberRegressor']={
             'epsilon': [1.35,1.5,1.75,2]
         }
-        self.param_grid['enet']={
+        self.param_grid['ElasticNet']={
             'l1_ratio': [0.3,0.5,0.6,0.7]
         }
-        self.param_grid['bay']={
+        self.param_grid['BayesianRidge']={
             'n_iter': [100,300,500]
         }
-        self.param_grid['xgbc']={
+        self.param_grid['XGBClassifier']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'learning_rate': [0.01,0.1]
         }
-        self.param_grid['lgbmc']={
+        self.param_grid['LGBMClassifier']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'num_leaves': [20,30,40]
         }
-        self.param_grid['cbc']={
+        self.param_grid['CatBoostClassifier']={
             'n_estimators': [10,100,500],
             'max_depth': [2,3],
            'learning_rate': [0.01,0.1]
         }
-        self.param_grid['xgbr']={
+        self.param_grid['XGBRegressor']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'learning_rate': [0.01,0.1]
         }
-        self.param_grid['lgbmr']={
+        self.param_grid['LGBMRegressor']={
             'n_estimators': [10,100,500],
             'max_depth': [None,2,3],
             'num_leaves': [20,30,40]
         }
-        self.param_grid['cbr']={
+        self.param_grid['CatBoostRegressor']={
             'n_estimators': [10,100,500],
             'max_depth': [2,3],
            'learning_rate': [0.01,0.1]
@@ -275,18 +275,19 @@ class AutoMLPipe():
 
         if self.categorical_cols!=[]:
             self.data = pd.get_dummies(self.data, columns = self.categorical_cols)
-
+        self.exclude=[x.lower() for x in self.exclude]
         trainx,testx,trainy,testy=train_test_split(self.data,self.label,test_size=self.test_size)      
         result=pd.DataFrame()
         prediction_set={}
         if self.task=='classification':
             for model_name,model in tqdm(self.classification_models.items()):
-                if model_name not in self.exclude:        
+                model_ex=model_name.lower()
+                if model_ex not in self.exclude:        
                     if tune==True:
                         try:   
                             predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
                             predictions=predictions.tolist()
-                            if model_name=='cbc':
+                            if model_name=='CatBoostClassifier':
                                 predictions=list(chain(*predictions))
                             fin=dict()
                             fin['name']=model_name
@@ -310,7 +311,7 @@ class AutoMLPipe():
                                 model.fit(trainx, trainy)
                                 predictions=model.predict(testx)
                                 predictions=predictions.tolist()
-                                if model_name=='cbc':
+                                if model_name=='CatBoostClassifier':
                                     predictions=list(chain(*predictions))
 
                                 self.mlp.log_metric("accuracy", accuracy_score(testy,predictions))
@@ -342,7 +343,8 @@ class AutoMLPipe():
                     result=result.append(fin,ignore_index=True)
         elif self.task=='regression':
             for model_name,model in tqdm(self.regression_models.items()):
-                if model_name not in self.exclude:
+                model_ex=model_name.lower()
+                if model_ex not in self.exclude: 
                     if tune==True:
                         try:
                             predictions,result_set=self.param_tune_model(model_name,trainx,testx,trainy,testy)
