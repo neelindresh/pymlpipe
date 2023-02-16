@@ -10,7 +10,7 @@ def main():
     target=iris_data["target"]
 
     df=pd.DataFrame(data,columns=iris_data["feature_names"])
-    preds,result=AutoMLPipe("IrisAutoML","classification",
+    automl_obj=AutoMLPipe("IrisAutoML","classification",
                             "precision",
                             df,
                             target,
@@ -19,7 +19,8 @@ def main():
                             scale='normalize',
                             register_model=True,
                             version=1.0,
-                            exclude=['log_reg',"lgbmc"]).run_automl(tune=False,tune_best=False)
+                            exclude=['log_reg',"lgbmc"])
+    preds,result=automl_obj.run_automl(tune=False,tune_best=False)
     
     #DataFrame with comparative metrics of all the models
     print(result)
