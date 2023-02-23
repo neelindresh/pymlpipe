@@ -64,7 +64,7 @@ class Client:
                 return pd.DataFrame(comparison).T.sort_values(by=sort_by,ascending=False)
             return pd.DataFrame(comparison).T
         else:
-            comparison
+            return comparison
             
     def get_model_details(self,experiment_name,runid,format:str=None):
         data=yamlio.read_yaml(
